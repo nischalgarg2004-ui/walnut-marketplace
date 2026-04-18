@@ -89,6 +89,65 @@ export async function exchangeCodeForAccessToken(code: string) {
   return tokenJson.access_token;
 }
 
+/** Optional fields from Graph `/me` for connected accounts (avoids public-page / datacenter blocks). */
+export type InstagramGraphMeFields = {
+  profileName?: string;
+  followersCount?: number;
+  mediaCount?: number;
+  profilePictureUrl?: string;
+};
+
+/**
+ * Fetches name, follower/post counts, and profile picture when the app token allows it.
+ * Retries with fewer fields if optional ones cause HTTP 400.
+ */
+export async function fetchInstagramGraphMeFields(accessToken: string): Promise<InstagramGraphMeFields> {
+  const tryFields = async (fields: string): Promise<InstagramGraphMeFields> => {
+    const meUrl = new URL("https://graph.instagram.com/v25.0/me");
+    meUrl.searchParams.set("fields", fields);
+    meUrl.searchParams.set("access_token", accessToken);
+    const meRes = await fetch(meUrl, { method: "GET", cache: "no-store" });
+    if (!meRes.ok) {
+      return {};
+    }
+    const raw = (await meRes.json()) as unknown;
+    const row = parseInstagramMeRow(raw);
+    if (!row) return {};
+    const name = typeof row.name === "string" ? row.name.trim() : undefined;
+    const num = (v: unknown): number | undefined => {
+      if (typeof v === "number" && Number.isFinite(v)) return v;
+      if (typeof v === "string") {
+        const n = Number.parseInt(v.replace(/,/g, ""), 10);
+        return Number.isFinite(n) ? n : undefined;
+      }
+      return undefined;
+    };
+    const pic =
+      typeof row.profile_picture_url === "string"
+        ? row.profile_picture_url
+        : typeof (row as { profile_pic_url?: string }).profile_pic_url === "string"
+          ? (row as { profile_pic_url: string }).profile_pic_url
+          : undefined;
+    return {
+      profileName: name,
+      followersCount: num(row.followers_count),
+      mediaCount: num(row.media_count),
+      profilePictureUrl: pic
+    };
+  };
+
+  const wide = await tryFields("name,followers_count,media_count,profile_picture_url");
+  if (
+    wide.profileName !== undefined ||
+    wide.followersCount !== undefined ||
+    wide.mediaCount !== undefined ||
+    wide.profilePictureUrl !== undefined
+  ) {
+    return wide;
+  }
+  return tryFields("name,followers_count,media_count");
+}
+
 export async function fetchInstagramIdentity(accessToken: string): Promise<InstagramIdentity> {
   const meUrl = new URL("https://graph.instagram.com/v25.0/me");
   // IG User fields: id, username, account_type (see IG User reference). Avoid optional fields that can 400 on some apps.

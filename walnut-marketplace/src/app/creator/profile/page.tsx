@@ -262,8 +262,12 @@ export default function CreatorProfilePage() {
                         {syncing ? "Updating…" : "Update from Instagram"}
                       </button>
                       <p className="help m-0 max-w-md text-left">
-                        Loads your display name, profile photo, and public follower/post counts from instagram.com (same
-                        as a logged-out visitor). Private or restricted accounts may not sync.
+                        Uses your Instagram login (official API) when connected, and fills in any gaps from the public
+                        web profile. If sync fails, try{" "}
+                        <a href="/creator/connect-instagram" className="underline underline-offset-2">
+                          reconnecting Instagram
+                        </a>
+                        .
                       </p>
                       {instagramStatsSyncedAt ? (
                         <p className="help m-0">Last updated: {new Date(instagramStatsSyncedAt).toLocaleString()}</p>

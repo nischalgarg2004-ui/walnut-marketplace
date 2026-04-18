@@ -7,7 +7,7 @@ import {
   exchangeCodeForAccessToken,
   fetchInstagramIdentity
 } from "@/lib/integrations/instagram";
-import { fetchInstagramPublicProfile } from "@/lib/integrations/instagram-public-profile";
+import { fetchInstagramProfileForSync } from "@/lib/integrations/instagram-public-profile";
 import { createSessionToken, getSessionUser, SESSION_COOKIE_NAME, sessionCookieSecure } from "@/lib/auth";
 
 function syntheticEmail(igUserId: string) {
@@ -45,9 +45,12 @@ export async function GET(req: NextRequest) {
     } catch {
       return NextResponse.redirect(new URL("/login?error=instagram_profile_fetch_failed", req.nextUrl.origin));
     }
-    let webProfile: Awaited<ReturnType<typeof fetchInstagramPublicProfile>> | null = null;
+    let webProfile: Awaited<ReturnType<typeof fetchInstagramProfileForSync>> | null = null;
     try {
-      webProfile = await fetchInstagramPublicProfile(identity.username);
+      webProfile = await fetchInstagramProfileForSync({
+        username: identity.username,
+        accessToken
+      });
     } catch {
       webProfile = null;
     }

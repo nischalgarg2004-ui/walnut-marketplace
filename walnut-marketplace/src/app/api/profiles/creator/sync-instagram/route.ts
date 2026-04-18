@@ -2,11 +2,12 @@ import { UserRole } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { getRequiredSessionUser, requireRole } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { fetchInstagramPublicProfile } from "@/lib/integrations/instagram-public-profile";
+import { decryptTokenFromStorage } from "@/lib/integrations/instagram";
+import { fetchInstagramProfileForSync } from "@/lib/integrations/instagram-public-profile";
 
 /**
- * Refreshes display name, follower count, post count, and profile photo URL by reading the
- * public Instagram web profile for the connected username (no Graph API).
+ * Refreshes display name, follower count, post count, and profile photo.
+ * Uses Instagram Graph `/me` when OAuth token is stored (reliable on serverless), then fills gaps from public web.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -25,9 +26,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const accessToken = profile.instagramAccessTokenEncrypted
+      ? decryptTokenFromStorage(profile.instagramAccessTokenEncrypted)
+      : null;
+
     let extracted;
     try {
-      extracted = await fetchInstagramPublicProfile(username);
+      extracted = await fetchInstagramProfileForSync({ username, accessToken });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Could not load Instagram profile";
       return NextResponse.json({ error: msg }, { status: 502 });
