@@ -110,6 +110,7 @@ model CreatorProfile {
   postCount                     Int                  @default(0)
   avgEngagement                 Float                @default(0)
   instagramStatsSyncedAt        DateTime?
+  instagramProfilePictureUrl      String?
   kycStatus                     String               @default("PENDING")
   user                          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   applications                  Application[]

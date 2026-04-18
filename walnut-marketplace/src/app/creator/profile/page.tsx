@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { CREATOR_NICHES } from "@/lib/creator-niches";
 
 type ProfileRow = {
@@ -17,7 +17,21 @@ type ProfileRow = {
   postCount: number;
   avgEngagement: number;
   instagramStatsSyncedAt: string | null;
+  instagramProfilePictureUrl: string | null;
 };
+
+function initialsFromName(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
+  return (parts[0]![0]! + parts[parts.length - 1]![0]!).toUpperCase();
+}
+
+function formatCompact(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1).replace(/\.0$/, "")}K`;
+  return String(n);
+}
 
 export default function CreatorProfilePage() {
   const [message, setMessage] = useState("");
@@ -33,9 +47,25 @@ export default function CreatorProfilePage() {
   const [postCount, setPostCount] = useState(0);
   const [avgEngagement, setAvgEngagement] = useState(0);
   const [selectedNiches, setSelectedNiches] = useState<string[]>([]);
+  const [nicheAddValue, setNicheAddValue] = useState("");
   const [instagramConnected, setInstagramConnected] = useState(false);
   const [instagramUsername, setInstagramUsername] = useState<string | null>(null);
   const [instagramStatsSyncedAt, setInstagramStatsSyncedAt] = useState<string | null>(null);
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
+
+  const displayHandle = useMemo(() => {
+    const h = instagramUsername ?? "";
+    return h.replace(/^@/, "");
+  }, [instagramUsername]);
+
+  const initials = useMemo(() => initialsFromName(fullName || displayHandle || "Creator"), [fullName, displayHandle]);
+
+  const nicheLabel = useCallback((slug: string) => CREATOR_NICHES.find((n) => n.slug === slug)?.label ?? slug, []);
+
+  const availableNicheOptions = useMemo(
+    () => CREATOR_NICHES.filter((n) => !selectedNiches.includes(n.slug)),
+    [selectedNiches]
+  );
 
   const loadProfile = useCallback(async () => {
     setLoading(true);
@@ -60,6 +90,7 @@ export default function CreatorProfilePage() {
       setInstagramConnected(connected);
       setInstagramUsername(p.instagramUsername ?? p.instagramHandle ?? null);
       setInstagramStatsSyncedAt(p.instagramStatsSyncedAt ?? null);
+      setProfilePictureUrl(p.instagramProfilePictureUrl ?? null);
       if (connected && (p.instagramUsername || p.instagramHandle)) {
         const handle = (p.instagramUsername ?? p.instagramHandle ?? "").replace(/^@/, "");
         if (handle && !p.fullName?.trim()) {
@@ -75,24 +106,30 @@ export default function CreatorProfilePage() {
     void loadProfile();
   }, [loadProfile]);
 
-  function toggleNiche(slug: string) {
-    setSelectedNiches((prev) => {
-      if (prev.includes(slug)) {
-        return prev.filter((s) => s !== slug);
-      }
-      if (prev.length >= 5) {
-        setMessage("You can select at most 5 niches.");
-        return prev;
-      }
-      setMessage("");
-      return [...prev, slug];
-    });
+  function removeNiche(slug: string) {
+    setSelectedNiches((prev) => prev.filter((s) => s !== slug));
+    setMessage("");
+  }
+
+  function onNicheSelect(value: string) {
+    if (!value) return;
+    if (selectedNiches.includes(value)) {
+      setNicheAddValue("");
+      return;
+    }
+    if (selectedNiches.length >= 5) {
+      setMessage("You can select at most 5 niches.");
+      return;
+    }
+    setSelectedNiches((prev) => [...prev, value]);
+    setNicheAddValue("");
+    setMessage("");
   }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (selectedNiches.length < 1 || selectedNiches.length > 5) {
-      setMessage("Choose between 1 and 5 niches.");
+      setMessage("Choose between 1 and 5 niches using the dropdown, then save.");
       return;
     }
     const payload = {
@@ -115,13 +152,13 @@ export default function CreatorProfilePage() {
       body: JSON.stringify(payload)
     });
     const result = await response.json();
-    setMessage(response.ok ? `Saved profile: ${result.data.fullName}` : `Failed: ${result.error}`);
+    setMessage(response.ok ? `Profile saved for ${result.data.fullName}.` : `Failed: ${result.error}`);
     if (response.ok) {
       void loadProfile();
     }
   }
 
-  async function onSyncInstagram() {
+  async function onSyncFromInstagram() {
     setSyncing(true);
     setSyncMessage("");
     try {
@@ -136,7 +173,8 @@ export default function CreatorProfilePage() {
       setFollowerCount(p.followerCount ?? 0);
       setPostCount(p.postCount ?? 0);
       setInstagramStatsSyncedAt(p.instagramStatsSyncedAt ?? null);
-      setSyncMessage("Instagram stats updated.");
+      setProfilePictureUrl(p.instagramProfilePictureUrl ?? null);
+      setSyncMessage("Synced from your public Instagram profile.");
       void loadProfile();
     } finally {
       setSyncing(false);
@@ -144,155 +182,301 @@ export default function CreatorProfilePage() {
   }
 
   return (
-    <section className="stack">
+    <section className="stack max-w-3xl">
       <div className="card hero">
-        <h1 className="title">Creator Profile</h1>
+        <h1 className="title">Creator profile</h1>
         <p className="subtitle">
-          Quality signals for brands: your niches, location, and Instagram metrics. Connect Instagram so your handle
-          and display name stay aligned with your Professional account.
+          This is how brands see you: photo, handle, niches, and location. Connect Instagram to keep your handle in sync;
+          use <strong>Update from Instagram</strong> to refresh name, photo, and public stats from the web profile.
         </p>
       </div>
-      <div className="card">
+
+      <div className="card overflow-hidden p-0">
         {loading ? (
-          <p className="help">Loading profile…</p>
+          <div className="p-6">
+            <p className="help m-0">Loading profile…</p>
+          </div>
         ) : (
-          <form onSubmit={onSubmit} className="form-grid">
-            <div className="form-full">
-              <label className="block text-sm font-medium text-foreground">Full name</label>
-              <input
-                name="fullName"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Full name (from Instagram when connected)"
-                required
-              />
-              {instagramConnected && instagramUsername ? (
-                <p className="help m-0 mt-1">
-                  Instagram: @{instagramUsername.replace(/^@/, "")} — saved as your public handle.
-                </p>
-              ) : null}
-            </div>
-
-            <div className="form-full">
-              <label className="block text-sm font-medium text-foreground">Niches (1–5)</label>
-              <p className="help m-0 mb-2">Pick the categories that best describe your content for Indian audiences.</p>
-              <div
-                className="max-h-64 overflow-y-auto rounded-md border border-input bg-muted/30 p-3"
-                style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "0.5rem" }}
-              >
-                {CREATOR_NICHES.map(({ slug, label }) => (
-                  <label key={slug} className="flex cursor-pointer items-start gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={selectedNiches.includes(slug)}
-                      onChange={() => toggleNiche(slug)}
-                      className="mt-1 w-auto"
-                    />
-                    <span>{label}</span>
-                  </label>
-                ))}
-              </div>
-              <p className="help m-0 mt-1">Selected: {selectedNiches.length} / 5</p>
-            </div>
-
-            <div className="form-full">
-              <label className="block text-sm font-medium text-foreground">Short bio</label>
-              <textarea
-                name="bio"
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                placeholder="Short creator bio"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-foreground">Gender</label>
-              <input name="gender" value={gender} onChange={(e) => setGender(e.target.value)} placeholder="Gender" />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-foreground">City</label>
-              <input name="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="City" />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-foreground">State</label>
-              <input name="state" value={state} onChange={(e) => setState(e.target.value)} placeholder="State" />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-foreground">Follower count</label>
-              <input
-                name="followerCount"
-                type="number"
-                min={0}
-                value={followerCount}
-                onChange={(e) => setFollowerCount(Number(e.target.value))}
-                disabled={instagramConnected}
-                title={instagramConnected ? "Use “Update from Instagram” to refresh from your account" : undefined}
-              />
-              {instagramConnected ? (
-                <p className="help m-0 mt-1">Synced from Instagram when you use the update action below.</p>
-              ) : null}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-foreground">Post count (media)</label>
-              <input
-                name="postCount"
-                type="number"
-                min={0}
-                value={postCount}
-                onChange={(e) => setPostCount(Number(e.target.value))}
-                disabled={instagramConnected}
-                title={instagramConnected ? "Use “Update from Instagram” to refresh from your account" : undefined}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-foreground">Average engagement rate (%)</label>
-              <input
-                name="avgEngagement"
-                type="number"
-                min={0}
-                step="0.1"
-                value={avgEngagement}
-                onChange={(e) => setAvgEngagement(Number(e.target.value))}
-              />
-            </div>
-
-            {instagramConnected ? (
-              <div className="form-full flex flex-col gap-2 sm:flex-row sm:items-center">
-                <button
-                  type="button"
-                  className="btn secondary"
-                  disabled={syncing}
-                  onClick={() => void onSyncInstagram()}
+          <>
+            <div className="border-b border-border bg-gradient-to-br from-accent/40 via-card to-card px-6 py-8 sm:px-8">
+              <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:gap-8">
+                <div
+                  className="relative mx-auto h-28 w-28 shrink-0 overflow-hidden rounded-full border-4 border-card shadow-md ring-2 ring-border sm:mx-0"
+                  aria-hidden
                 >
-                  {syncing ? "Updating…" : "Update from Instagram"}
-                </button>
-                <p className="help m-0">
-                  Pulls display name, followers, and media count from Instagram Graph using your connected account (not
-                  public-page scraping).
-                </p>
-                {instagramStatsSyncedAt ? (
-                  <p className="help m-0">
-                    Last synced: {new Date(instagramStatsSyncedAt).toLocaleString()}
-                  </p>
-                ) : null}
+                  {profilePictureUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- external Instagram CDN URLs
+                    <img
+                      src={profilePictureUrl}
+                      alt=""
+                      className="h-full w-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-muted text-2xl font-semibold tracking-tight text-muted-foreground">
+                      {initials}
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1 text-center sm:text-left">
+                  <p className="m-0 text-xs font-medium uppercase tracking-wide text-muted-foreground">Public preview</p>
+                  <h2 className="title mt-1 text-2xl">{fullName.trim() || "Your name"}</h2>
+                  {displayHandle ? (
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      @{displayHandle}
+                      {instagramConnected ? (
+                        <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-900">
+                          Instagram linked
+                        </span>
+                      ) : null}
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-sm text-muted-foreground">Add Instagram in settings to show a handle.</p>
+                  )}
+                  <div className="mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 sm:justify-start">
+                    <div>
+                      <span className="text-lg font-semibold tabular-nums text-foreground">
+                        {formatCompact(followerCount)}
+                      </span>
+                      <span className="ml-1.5 text-sm text-muted-foreground">followers</span>
+                    </div>
+                    <div>
+                      <span className="text-lg font-semibold tabular-nums text-foreground">
+                        {formatCompact(postCount)}
+                      </span>
+                      <span className="ml-1.5 text-sm text-muted-foreground">posts</span>
+                    </div>
+                    <div>
+                      <span className="text-lg font-semibold tabular-nums text-foreground">{avgEngagement}%</span>
+                      <span className="ml-1.5 text-sm text-muted-foreground">avg. engagement</span>
+                    </div>
+                  </div>
+                  {instagramConnected && displayHandle ? (
+                    <div className="mt-5 flex flex-col items-center gap-2 sm:items-start">
+                      <button
+                        type="button"
+                        className="btn secondary"
+                        disabled={syncing}
+                        onClick={() => void onSyncFromInstagram()}
+                      >
+                        {syncing ? "Updating…" : "Update from Instagram"}
+                      </button>
+                      <p className="help m-0 max-w-md text-left">
+                        Loads your display name, profile photo, and public follower/post counts from instagram.com (same
+                        as a logged-out visitor). Private or restricted accounts may not sync.
+                      </p>
+                      {instagramStatsSyncedAt ? (
+                        <p className="help m-0">Last updated: {new Date(instagramStatsSyncedAt).toLocaleString()}</p>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
               </div>
-            ) : null}
-
-            {syncMessage ? <p className="form-full help text-emerald-800">{syncMessage}</p> : null}
-
-            <div className="form-full">
-              <button className="btn primary" type="submit">
-                Save profile
-              </button>
             </div>
-          </form>
+
+            <form onSubmit={onSubmit} className="form-grid p-6 sm:p-8" aria-labelledby="profile-details-heading">
+              <h3 id="profile-details-heading" className="form-full m-0 text-lg font-semibold text-foreground">
+                Details
+              </h3>
+
+              <div className="form-full">
+                <label className="mb-1 block text-sm font-medium text-foreground" htmlFor="fullName">
+                  Full name
+                </label>
+                <input
+                  id="fullName"
+                  name="fullName"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Name shown to brands"
+                  required
+                  autoComplete="name"
+                />
+              </div>
+
+              <div className="form-full">
+                <label className="mb-1 block text-sm font-medium text-foreground" id="niches-label">
+                  Niches (1–5)
+                </label>
+                <p className="help m-0 mb-2" id="niches-hint">
+                  Choose from the list, add up to five, then save. Brands use this for matching campaigns.
+                </p>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <select
+                    className="max-w-md"
+                    aria-labelledby="niches-label"
+                    aria-describedby="niches-hint"
+                    value={nicheAddValue}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setNicheAddValue(v);
+                      onNicheSelect(v);
+                    }}
+                    disabled={availableNicheOptions.length === 0 || selectedNiches.length >= 5}
+                  >
+                    <option value="">
+                      {selectedNiches.length >= 5 ? "Maximum niches selected" : "Add a niche…"}
+                    </option>
+                    {availableNicheOptions.map(({ slug, label }) => (
+                      <option key={slug} value={slug}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {selectedNiches.length > 0 ? (
+                  <ul className="mt-3 flex list-none flex-wrap gap-2 p-0" aria-label="Selected niches">
+                    {selectedNiches.map((slug) => (
+                      <li key={slug}>
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/60 px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+                          onClick={() => removeNiche(slug)}
+                        >
+                          {nicheLabel(slug)}
+                          <span className="text-muted-foreground" aria-hidden>
+                            ×
+                          </span>
+                          <span className="sr-only">Remove {nicheLabel(slug)}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="help m-0 mt-2">No niches yet — pick at least one from the dropdown.</p>
+                )}
+                <p className="help m-0 mt-1">{selectedNiches.length} of 5 selected</p>
+              </div>
+
+              <div className="form-full">
+                <label className="mb-1 block text-sm font-medium text-foreground" htmlFor="bio">
+                  Short bio
+                </label>
+                <textarea
+                  id="bio"
+                  name="bio"
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  placeholder="What do you create? Tone, languages, audience."
+                  rows={4}
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-foreground" htmlFor="gender">
+                  Gender
+                </label>
+                <input
+                  id="gender"
+                  name="gender"
+                  value={gender}
+                  onChange={(e) => setGender(e.target.value)}
+                  placeholder="Optional"
+                  autoComplete="sex"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-foreground" htmlFor="city">
+                  City
+                </label>
+                <input id="city" name="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="City" />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-foreground" htmlFor="state">
+                  State
+                </label>
+                <input
+                  id="state"
+                  name="state"
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                  placeholder="State / UT"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-foreground" htmlFor="followerCount">
+                  Follower count
+                </label>
+                <input
+                  id="followerCount"
+                  name="followerCount"
+                  type="number"
+                  min={0}
+                  inputMode="numeric"
+                  value={followerCount}
+                  onChange={(e) => setFollowerCount(Number(e.target.value))}
+                  disabled={instagramConnected}
+                  aria-describedby="followers-help"
+                />
+                <p id="followers-help" className="help m-0 mt-1">
+                  {instagramConnected
+                    ? "Synced from Instagram when you use Update from Instagram."
+                    : "Enter manually if Instagram is not connected."}
+                </p>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-foreground" htmlFor="postCount">
+                  Post count (media)
+                </label>
+                <input
+                  id="postCount"
+                  name="postCount"
+                  type="number"
+                  min={0}
+                  inputMode="numeric"
+                  value={postCount}
+                  onChange={(e) => setPostCount(Number(e.target.value))}
+                  disabled={instagramConnected}
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-foreground" htmlFor="avgEngagement">
+                  Average engagement rate (%)
+                </label>
+                <input
+                  id="avgEngagement"
+                  name="avgEngagement"
+                  type="number"
+                  min={0}
+                  step="0.1"
+                  inputMode="decimal"
+                  value={avgEngagement}
+                  onChange={(e) => setAvgEngagement(Number(e.target.value))}
+                  aria-describedby="engagement-help"
+                />
+                <p id="engagement-help" className="help m-0 mt-1">
+                  Approximate average engagement on your posts (you can estimate).
+                </p>
+              </div>
+
+              {syncMessage ? (
+                <p
+                  className={`form-full m-0 text-sm ${syncMessage.includes("failed") || syncMessage.includes("Could not") ? "text-destructive" : "text-emerald-800"}`}
+                  role="status"
+                >
+                  {syncMessage}
+                </p>
+              ) : null}
+
+              <div className="form-full flex flex-wrap items-center gap-3 pt-2">
+                <button className="btn primary" type="submit">
+                  Save profile
+                </button>
+                <p className="help m-0">Saves bio, location, niches, and engagement. Instagram metrics stay in sync when you use the button above.</p>
+              </div>
+            </form>
+          </>
         )}
-        <p className="help">{message}</p>
+        {message ? (
+          <p className="border-t border-border px-6 py-3 text-sm text-foreground sm:px-8" role="status">
+            {message}
+          </p>
+        ) : null}
       </div>
     </section>
   );

@@ -62,56 +62,6 @@ function parseInstagramMeRow(raw: unknown): Record<string, unknown> | undefined 
   return o;
 }
 
-/**
- * Profile fields for the connected Instagram Professional account via Graph API
- * (uses the access token — no public-page scraping). May return partial data if
- * the app lacks permissions for `name`, `followers_count`, or `media_count`.
- */
-export type InstagramExtendedProfile = {
-  profileName?: string;
-  followersCount?: number;
-  mediaCount?: number;
-};
-
-export async function fetchInstagramExtendedFields(accessToken: string): Promise<InstagramExtendedProfile> {
-  const meUrl = new URL("https://graph.instagram.com/v25.0/me");
-  meUrl.searchParams.set("fields", "name,followers_count,media_count,username");
-  meUrl.searchParams.set("access_token", accessToken);
-  const meRes = await fetch(meUrl, { method: "GET" });
-  if (!meRes.ok) {
-    let detail = "";
-    try {
-      const errBody = (await meRes.json()) as { error?: { message?: string } };
-      detail = errBody?.error?.message ? `: ${errBody.error.message}` : "";
-    } catch {
-      /* ignore */
-    }
-    console.warn(`Instagram /me (extended) HTTP ${meRes.status}${detail}`);
-    return {};
-  }
-  const raw = await meRes.json();
-  const row = parseInstagramMeRow(raw);
-  if (!row) return {};
-  const name = typeof row.name === "string" ? row.name : undefined;
-  const followers =
-    typeof row.followers_count === "number"
-      ? row.followers_count
-      : typeof row.followers_count === "string"
-        ? Number.parseInt(row.followers_count, 10)
-        : undefined;
-  const media =
-    typeof row.media_count === "number"
-      ? row.media_count
-      : typeof row.media_count === "string"
-        ? Number.parseInt(row.media_count, 10)
-        : undefined;
-  return {
-    profileName: name,
-    followersCount: Number.isFinite(followers) ? followers : undefined,
-    mediaCount: Number.isFinite(media) ? media : undefined
-  };
-}
-
 export async function exchangeCodeForAccessToken(code: string) {
   const clientId = getRequiredEnv("INSTAGRAM_CLIENT_ID");
   const clientSecret = getRequiredEnv("INSTAGRAM_CLIENT_SECRET");

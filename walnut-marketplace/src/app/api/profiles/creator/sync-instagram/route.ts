@@ -2,43 +2,56 @@ import { UserRole } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { getRequiredSessionUser, requireRole } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { decryptTokenFromStorage, fetchInstagramExtendedFields } from "@/lib/integrations/instagram";
+import { fetchInstagramPublicProfile } from "@/lib/integrations/instagram-public-profile";
 
 /**
- * Refreshes follower count, post (media) count, and display name from Instagram Graph API
- * using the stored OAuth token for the connected Professional account.
+ * Refreshes display name, follower count, post count, and profile photo URL by reading the
+ * public Instagram web profile for the connected username (no Graph API).
  */
 export async function POST(req: NextRequest) {
   try {
     const user = getRequiredSessionUser(req);
     requireRole(user, [UserRole.CREATOR, UserRole.ADMIN]);
     const profile = await db.creatorProfile.findUnique({ where: { userId: user.userId } });
-    if (!profile?.instagramAccessTokenEncrypted) {
-      return NextResponse.json({ error: "Connect Instagram first" }, { status: 400 });
+    if (!profile) {
+      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
-    const token = decryptTokenFromStorage(profile.instagramAccessTokenEncrypted);
-    if (!token) {
-      return NextResponse.json({ error: "Reconnect Instagram to refresh your token" }, { status: 400 });
-    }
-    const extended = await fetchInstagramExtendedFields(token);
-    const hasName = Boolean(extended.profileName?.trim());
-    const hasFollowers = extended.followersCount !== undefined;
-    const hasMedia = extended.mediaCount !== undefined;
-    if (!hasName && !hasFollowers && !hasMedia) {
+    const raw = profile.instagramUsername ?? profile.instagramHandle;
+    const username = raw?.replace(/^@/, "").trim();
+    if (!username) {
       return NextResponse.json(
-        {
-          error:
-            "Instagram did not return profile stats. Ensure the app has the right permissions and try reconnecting Instagram."
-        },
+        { error: "Connect Instagram or add an Instagram username to sync." },
+        { status: 400 }
+      );
+    }
+
+    let extracted;
+    try {
+      extracted = await fetchInstagramPublicProfile(username);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Could not load Instagram profile";
+      return NextResponse.json({ error: msg }, { status: 502 });
+    }
+
+    const hasName = Boolean(extracted.fullName?.trim());
+    const hasFollowers = extracted.followersCount !== undefined;
+    const hasMedia = extracted.mediaCount !== undefined;
+    const hasPic = Boolean(extracted.profilePictureUrl?.trim());
+
+    if (!hasName && !hasFollowers && !hasMedia && !hasPic) {
+      return NextResponse.json(
+        { error: "Instagram did not return usable profile data. Try again later or check the account is public." },
         { status: 502 }
       );
     }
+
     const updated = await db.creatorProfile.update({
       where: { userId: user.userId },
       data: {
-        ...(hasFollowers ? { followerCount: extended.followersCount! } : {}),
-        ...(hasMedia ? { postCount: extended.mediaCount! } : {}),
-        ...(hasName ? { fullName: extended.profileName!.trim() } : {}),
+        ...(hasFollowers ? { followerCount: extracted.followersCount! } : {}),
+        ...(hasMedia ? { postCount: extracted.mediaCount! } : {}),
+        ...(hasName ? { fullName: extracted.fullName!.trim() } : {}),
+        ...(hasPic ? { instagramProfilePictureUrl: extracted.profilePictureUrl!.trim() } : {}),
         instagramHandle: profile.instagramUsername ?? profile.instagramHandle,
         instagramStatsSyncedAt: new Date()
       }

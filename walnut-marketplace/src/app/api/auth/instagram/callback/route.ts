@@ -5,9 +5,9 @@ import {
   decodeInstagramState,
   encryptTokenForStorage,
   exchangeCodeForAccessToken,
-  fetchInstagramExtendedFields,
   fetchInstagramIdentity
 } from "@/lib/integrations/instagram";
+import { fetchInstagramPublicProfile } from "@/lib/integrations/instagram-public-profile";
 import { createSessionToken, getSessionUser, SESSION_COOKIE_NAME, sessionCookieSecure } from "@/lib/auth";
 
 function syntheticEmail(igUserId: string) {
@@ -45,8 +45,13 @@ export async function GET(req: NextRequest) {
     } catch {
       return NextResponse.redirect(new URL("/login?error=instagram_profile_fetch_failed", req.nextUrl.origin));
     }
-    const extended = await fetchInstagramExtendedFields(accessToken);
-    const displayName = extended.profileName?.trim() || identity.username;
+    let webProfile: Awaited<ReturnType<typeof fetchInstagramPublicProfile>> | null = null;
+    try {
+      webProfile = await fetchInstagramPublicProfile(identity.username);
+    } catch {
+      webProfile = null;
+    }
+    const displayName = webProfile?.fullName?.trim() || identity.username;
     const encryptedToken = encryptTokenForStorage(accessToken);
     const existingSession = getSessionUser(req);
     const linkedProfile = await db.creatorProfile.findUnique({
@@ -74,9 +79,15 @@ export async function GET(req: NextRequest) {
             create: {
               fullName: displayName,
               niches: [],
-              ...(extended.followersCount !== undefined ? { followerCount: extended.followersCount } : {}),
-              ...(extended.mediaCount !== undefined ? { postCount: extended.mediaCount } : {}),
-              ...(extended.followersCount !== undefined || extended.mediaCount !== undefined
+              ...(webProfile?.followersCount !== undefined ? { followerCount: webProfile.followersCount } : {}),
+              ...(webProfile?.mediaCount !== undefined ? { postCount: webProfile.mediaCount } : {}),
+              ...(webProfile?.profilePictureUrl?.trim()
+                ? { instagramProfilePictureUrl: webProfile.profilePictureUrl.trim() }
+                : {}),
+              ...(webProfile?.followersCount !== undefined ||
+              webProfile?.mediaCount !== undefined ||
+              webProfile?.fullName?.trim() ||
+              webProfile?.profilePictureUrl?.trim()
                 ? { instagramStatsSyncedAt: new Date() }
                 : {})
             }
@@ -100,12 +111,16 @@ export async function GET(req: NextRequest) {
         instagramAccountType: identity.accountType,
         instagramConnectedAt: new Date(),
         instagramAccessTokenEncrypted: encryptedToken,
-        ...(extended.profileName?.trim() ? { fullName: extended.profileName.trim() } : {}),
-        ...(extended.followersCount !== undefined ? { followerCount: extended.followersCount } : {}),
-        ...(extended.mediaCount !== undefined ? { postCount: extended.mediaCount } : {}),
-        ...(extended.followersCount !== undefined ||
-        extended.mediaCount !== undefined ||
-        extended.profileName?.trim()
+        ...(webProfile?.fullName?.trim() ? { fullName: webProfile.fullName.trim() } : {}),
+        ...(webProfile?.followersCount !== undefined ? { followerCount: webProfile.followersCount } : {}),
+        ...(webProfile?.mediaCount !== undefined ? { postCount: webProfile.mediaCount } : {}),
+        ...(webProfile?.profilePictureUrl?.trim()
+          ? { instagramProfilePictureUrl: webProfile.profilePictureUrl.trim() }
+          : {}),
+        ...(webProfile?.followersCount !== undefined ||
+        webProfile?.mediaCount !== undefined ||
+        webProfile?.fullName?.trim() ||
+        webProfile?.profilePictureUrl?.trim()
           ? { instagramStatsSyncedAt: new Date() }
           : {})
       },
@@ -119,9 +134,14 @@ export async function GET(req: NextRequest) {
         instagramAccountType: identity.accountType,
         instagramConnectedAt: new Date(),
         instagramAccessTokenEncrypted: encryptedToken,
-        ...(extended.followersCount !== undefined ? { followerCount: extended.followersCount } : {}),
-        ...(extended.mediaCount !== undefined ? { postCount: extended.mediaCount } : {}),
-        ...(extended.followersCount !== undefined || extended.mediaCount !== undefined
+        ...(webProfile?.followersCount !== undefined ? { followerCount: webProfile.followersCount } : {}),
+        ...(webProfile?.mediaCount !== undefined ? { postCount: webProfile.mediaCount } : {}),
+        ...(webProfile?.profilePictureUrl?.trim()
+          ? { instagramProfilePictureUrl: webProfile.profilePictureUrl.trim() }
+          : {}),
+        ...(webProfile?.followersCount !== undefined ||
+        webProfile?.mediaCount !== undefined ||
+        webProfile?.profilePictureUrl?.trim()
           ? { instagramStatsSyncedAt: new Date() }
           : {})
       }
