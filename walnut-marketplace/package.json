@@ -1,0 +1,44 @@
+{
+  "name": "walnut-marketplace",
+  "version": "0.1.0",
+  "private": true,
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:seed": "tsx prisma/seed.ts",
+    "seed:opportunities": "tsx scripts/seed-live-opportunities.ts",
+    "vercel:build": "node scripts/vercel-build.mjs",
+    "local:setup": "powershell -ExecutionPolicy Bypass -File scripts/local-setup.ps1",
+    "local:run": "powershell -ExecutionPolicy Bypass -File scripts/local-run.ps1",
+    "local:stop": "powershell -ExecutionPolicy Bypass -File scripts/local-stop.ps1"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.6.0",
+    "bcryptjs": "^3.0.2",
+    "next": "^15.2.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.13.14",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "dotenv": "^17.4.2",
+    "eslint": "^9.22.0",
+    "eslint-config-next": "^15.2.0",
+    "prisma": "^6.6.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "vercel": "^51.4.0"
+  }
+}

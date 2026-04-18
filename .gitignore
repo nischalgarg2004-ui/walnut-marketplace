@@ -1,0 +1,13 @@
+.vercel
+walnut-marketplace/node_modules/
+walnut-marketplace/.next/
+walnut-marketplace/dist/
+walnut-marketplace/coverage/
+walnut-marketplace/.env
+walnut-marketplace/.env.local
+walnut-marketplace/.env.*.local
+walnut-marketplace/.env.production.vercel
+walnut-marketplace/*.log
+walnut-marketplace/dummy_vars.json
+walnut-marketplace/prisma/dev.db
+walnut-marketplace/tsconfig.tsbuildinfo
