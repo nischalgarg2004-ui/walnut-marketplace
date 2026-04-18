@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Mirror of CSS variables in globals.css — Part B1",
+  "color": {
+    "background": "hsl(210 20% 98%)",
+    "foreground": "hsl(222 47% 11%)",
+    "muted": "hsl(210 20% 96%)",
+    "mutedForeground": "hsl(215 16% 47%)",
+    "card": "hsl(0 0% 100%)",
+    "border": "hsl(214 32% 91%)",
+    "primary": "hsl(173 80% 32%)",
+    "primaryForeground": "hsl(0 0% 100%)",
+    "accent": "hsl(173 58% 95%)",
+    "accentForeground": "hsl(173 80% 22%)",
+    "destructive": "hsl(0 72% 51%)",
+    "success": "hsl(142 76% 36%)",
+    "warning": "hsl(38 92% 50%)"
+  },
+  "radius": {
+    "sm": "8px",
+    "md": "12px",
+    "lg": "14px"
+  },
+  "zIndex": {
+    "dropdown": 10,
+    "stickySubheader": 15,
+    "sticky": 20,
+    "modalBackdrop": 40,
+    "modal": 50,
+    "toast": 60
+  }
+}

@@ -1,6 +1,7 @@
 import { UserRole } from "@prisma/client";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { BusinessAppShell } from "@/components/shell/BusinessAppShell";
 import { parseSessionToken, SESSION_COOKIE_NAME } from "@/lib/auth";
 
 export default async function BusinessLayout({ children }: { children: React.ReactNode }) {
@@ -18,5 +19,5 @@ export default async function BusinessLayout({ children }: { children: React.Rea
     redirect("/login");
   }
 
-  return children;
+  return <BusinessAppShell userEmail={user.email}>{children}</BusinessAppShell>;
 }

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
+import PublicSiteHeader from "@/components/PublicSiteHeader";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
@@ -29,58 +30,68 @@ export default function SignupPage() {
   }
 
   return (
-    <section className="stack" style={{ maxWidth: 560, margin: "0 auto" }}>
-      <div className="card hero">
-        <h1 className="title">Create Creator Account</h1>
-        <p className="subtitle">
-          Use Instagram-first signup or create with email/password and connect Instagram afterward.
-        </p>
-        <a
-          className="btn secondary"
-          href={email ? `/api/auth/instagram/start?mode=signup&email=${encodeURIComponent(email)}` : "/api/auth/instagram/start?mode=signup"}
-        >
-          Continue with Instagram
-        </a>
-      </div>
-
-      <div className="card">
-        <form className="form-grid" onSubmit={onSubmit}>
-          <input
-            className="form-full"
-            type="text"
-            required
-            placeholder="Full name"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-          />
-          <input
-            className="form-full"
-            type="email"
-            required
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <input
-            className="form-full"
-            type="password"
-            required
-            minLength={8}
-            placeholder="Password (min 8 chars)"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <div className="form-full row">
-            <button className="btn primary" type="submit" disabled={loading}>
-              {loading ? "Creating..." : "Create with Email"}
-            </button>
-            <Link className="btn ghost" href="/login">
-              Already have an account
-            </Link>
+    <>
+      <PublicSiteHeader />
+      <main className="main-content">
+        <section className="mx-auto max-w-lg stack">
+          <div className="card hero">
+            <h1 className="title">Create your account</h1>
+            <p className="subtitle">
+              Use Instagram-first signup or create with email and password—then connect Instagram to unlock
+              opportunities.
+            </p>
+            <a
+              className="btn secondary"
+              href={
+                email
+                  ? `/api/auth/instagram/start?mode=signup&email=${encodeURIComponent(email)}`
+                  : "/api/auth/instagram/start?mode=signup"
+              }
+            >
+              Continue with Instagram
+            </a>
           </div>
-        </form>
-        {message ? <p className="help">{message}</p> : null}
-      </div>
-    </section>
+
+          <div className="card">
+            <form className="form-grid" onSubmit={onSubmit}>
+              <input
+                className="form-full"
+                type="text"
+                required
+                placeholder="Full name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+              />
+              <input
+                className="form-full"
+                type="email"
+                required
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <input
+                className="form-full"
+                type="password"
+                required
+                minLength={8}
+                placeholder="Password (min 8 characters)"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <div className="form-full row">
+                <button className="btn primary" type="submit" disabled={loading}>
+                  {loading ? "Creating…" : "Continue"}
+                </button>
+                <Link className="btn ghost" href="/login">
+                  Already have an account
+                </Link>
+              </div>
+            </form>
+            {message ? <p className="help">{message}</p> : null}
+          </div>
+        </section>
+      </main>
+    </>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import { OpportunityCard } from "@/components/design-system/OpportunityCard";
 import Toast from "@/components/ui/Toast";
 
 type Row = {
@@ -63,8 +63,7 @@ export default function CreatorOpportunitiesPage() {
       <div className="card hero">
         <h1 className="title">Opportunities</h1>
         <p className="subtitle">
-          Filter by eligibility and deal type. Only published campaigns you can apply to are listed when “Eligible
-          only” is on.
+          Campaigns you can apply to right now. When “Eligible only” is on, we hide briefs you don’t qualify for.
         </p>
       </div>
 
@@ -107,25 +106,38 @@ export default function CreatorOpportunitiesPage() {
             <div className="skeleton skeleton-card" />
           </div>
         )}
-        <div className="list">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {!loading && items.length === 0 && (
-            <div className="empty">
+            <div className="empty md:col-span-2">
               <div className="empty-visual" />
               No opportunities match your filters.
             </div>
           )}
-          {items.map((item) => (
-            <article className="card" key={item.id}>
-              <h3 className="item-title">{item.title}</h3>
-              <p className="muted">{item.brief.slice(0, 200)}…</p>
-              <p className="muted">
-                Brand: {item.business?.brandName ?? "—"} · Eligible: {item.eligible ? "yes" : "no"}
-              </p>
-              <Link className="btn primary" href={`/creator/opportunity/${item.id}`}>
-                View &amp; apply
-              </Link>
-            </article>
-          ))}
+          {items.map((item) => {
+            const payParts: string[] = [];
+            if (item.compensation?.fixedFeeAmount) payParts.push(`Fixed ${item.compensation.fixedFeeAmount}`);
+            if (item.compensation?.cpvRatePer1000) payParts.push(`CPV ${item.compensation.cpvRatePer1000}/1k`);
+            if (item.compensation?.hasBarter) payParts.push("Barter");
+            const metaLine = [
+              item.business?.brandName,
+              item.eligible === false ? "Not eligible" : "Eligible",
+              payParts.join(" · ")
+            ]
+              .filter(Boolean)
+              .join(" · ");
+            return (
+              <OpportunityCard
+                key={item.id}
+                id={item.id}
+                title={item.title}
+                briefExcerpt={item.brief.length > 200 ? `${item.brief.slice(0, 200)}…` : item.brief}
+                brandName={item.business?.brandName}
+                metaLine={metaLine}
+                href={`/creator/opportunity/${item.id}`}
+                ctaLabel="View & apply"
+              />
+            );
+          })}
         </div>
       </div>
       <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: "", type: "info" })} />

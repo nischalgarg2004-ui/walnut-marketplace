@@ -101,6 +101,9 @@ export default function CreatorDealsPage() {
                       ? ` · Accepted ${new Date(app.contract.acceptedAt).toLocaleString()}`
                       : ""}
                   </p>
+                  <Link className="btn primary" href={`/creator/deals/${app.contract.id}`}>
+                    Open deal
+                  </Link>
                   {app.contract.status === "PENDING" && (
                     <button type="button" className="btn primary" onClick={() => acceptContract(app.contract!.id)}>
                       Accept contract

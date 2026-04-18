@@ -4,9 +4,10 @@ import type { Route } from "next";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import PublicSiteHeader from "@/components/PublicSiteHeader";
 
 function homeForRole(role: string) {
-  if (role === "CREATOR") return "/creator/dashboard";
+  if (role === "CREATOR") return "/creator";
   if (role === "BUSINESS") return "/business";
   if (role === "ADMIN") return "/admin";
   return "/";
@@ -99,31 +100,36 @@ export default function LoginPage() {
   }
 
   return (
-    <section className="stack" style={{ maxWidth: 520, margin: "0 auto" }}>
-      <div className="card hero">
-        <h1 className="title">Login</h1>
-        <p className="subtitle">Login with email/password or continue with Instagram.</p>
-        <div className="row">
-          <a className="btn secondary" href="/api/auth/instagram/start?mode=login">
-            Continue with Instagram
-          </a>
-          <Link className="btn ghost" href="/signup">
-            Need an account?
-          </Link>
-        </div>
-      </div>
-      <div className="card">
-        <form onSubmit={onSubmit} className="form-grid">
-          <input className="form-full" name="email" placeholder="Email" type="email" required />
-          <input className="form-full" name="password" placeholder="Password" type="password" required />
-          <div className="form-full row">
-            <button className="btn primary" type="submit" disabled={loading}>
-              {loading ? "Logging in..." : "Login"}
-            </button>
+    <>
+      <PublicSiteHeader />
+      <main className="main-content">
+        <section className="mx-auto max-w-lg stack">
+          <div className="card hero">
+            <h1 className="title">Collaborations that stay on brief.</h1>
+            <p className="subtitle">Sign in to manage deals, payouts, and deliverables in one place.</p>
+            <div className="row">
+              <a className="btn secondary" href="/api/auth/instagram/start?mode=login">
+                Continue with Instagram
+              </a>
+              <Link className="btn ghost" href="/signup">
+                Create an account
+              </Link>
+            </div>
           </div>
-        </form>
-        {error ? <p className="help" style={{ color: "#b91c1c" }}>{error}</p> : null}
-      </div>
-    </section>
+          <div className="card">
+            <form onSubmit={onSubmit} className="form-grid">
+              <input className="form-full" name="email" placeholder="Work email" type="email" required />
+              <input className="form-full" name="password" placeholder="Password" type="password" required />
+              <div className="form-full row">
+                <button className="btn primary" type="submit" disabled={loading}>
+                  {loading ? "Signing in…" : "Sign in"}
+                </button>
+              </div>
+            </form>
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          </div>
+        </section>
+      </main>
+    </>
   );
 }

@@ -1,26 +1,29 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import AppHeader from "@/components/AppHeader";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import React from "react";
 
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap"
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap"
+});
+
 export const metadata: Metadata = {
-  title: "Project Walnut",
-  description: "India Creator Marketplace MVP"
+  title: "Walnut — Creator marketplace",
+  description: "Collaborations that stay on brief. Paid and barter Instagram campaigns for creators and brands."
 };
 
-export default function RootLayout({
-  children
-}: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
-      <body>
-        <div className="app-shell">
-          <AppHeader />
-          <main className="main-content">
-            {children}
-          </main>
-        </div>
-      </body>
+    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+      <body className="font-sans">{children}</body>
     </html>
   );
 }

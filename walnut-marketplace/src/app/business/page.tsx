@@ -11,7 +11,7 @@ export default function BusinessDashboardPage() {
         </p>
       </div>
 
-      <div className="grid three">
+      <div className="layout-grid three">
         <div className="stat">
           <p className="stat-label">Campaign Models</p>
           <p className="stat-value">Barter / Fixed / CPV</p>

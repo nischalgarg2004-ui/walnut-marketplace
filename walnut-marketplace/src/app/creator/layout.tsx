@@ -1,7 +1,7 @@
 import { UserRole } from "@prisma/client";
 import { cookies } from "next/headers";
-import Link from "next/link";
 import { redirect } from "next/navigation";
+import { CreatorAppShell } from "@/components/shell/CreatorAppShell";
 import { parseSessionToken, SESSION_COOKIE_NAME } from "@/lib/auth";
 
 export default async function CreatorLayout({ children }: { children: React.ReactNode }) {
@@ -19,35 +19,5 @@ export default async function CreatorLayout({ children }: { children: React.Reac
     redirect("/login");
   }
 
-  return (
-    <div className="stack">
-      <nav className="card row" style={{ flexWrap: "wrap" }}>
-        <Link className="btn ghost" href="/creator/dashboard">
-          Dashboard
-        </Link>
-        <Link className="btn ghost" href="/creator/opportunities">
-          Opportunities
-        </Link>
-        <Link className="btn ghost" href="/creator/deals">
-          My deals
-        </Link>
-        <Link className="btn ghost" href="/creator/applications">
-          Applications
-        </Link>
-        <Link className="btn ghost" href="/creator/projects">
-          Projects
-        </Link>
-        <Link className="btn ghost" href="/creator/earnings">
-          Earnings
-        </Link>
-        <Link className="btn ghost" href="/creator/profile">
-          Profile
-        </Link>
-        <Link className="btn ghost" href="/creator/settings">
-          Settings
-        </Link>
-      </nav>
-      {children}
-    </div>
-  );
+  return <CreatorAppShell userEmail={user.email}>{children}</CreatorAppShell>;
 }

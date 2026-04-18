@@ -8,7 +8,7 @@ export default function AdminDashboardPage() {
         </p>
       </div>
 
-      <div className="grid three">
+      <div className="layout-grid three">
         <div className="stat">
           <p className="stat-label">Moderation</p>
           <p className="stat-value">Users + Requirements</p>
