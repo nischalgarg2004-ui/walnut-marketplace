@@ -82,7 +82,7 @@ const opportunities: Array<{
       minFollowers: 2000,
       minEngagementRate: 2.5,
       allowedLocations: ["Mumbai", "Delhi", "Bengaluru"],
-      niches: ["beauty", "skincare"]
+      niches: ["beauty-skincare"]
     },
     compensation: {
       hasBarter: true,
@@ -103,7 +103,7 @@ const opportunities: Array<{
       minFollowers: 8000,
       minEngagementRate: 3.5,
       allowedLocations: ["Ahmedabad", "Jaipur", "Hyderabad"],
-      niches: ["food", "streetfood"]
+      niches: ["food-reviews-restaurants", "regional-food-culture"]
     },
     compensation: { hasBarter: false, fixedFee: "2500", cpvPer1000: "220" }
   },
@@ -119,7 +119,7 @@ const opportunities: Array<{
       minFollowers: 15000,
       minEngagementRate: 2.8,
       allowedLocations: ["Pune", "Kochi", "Goa"],
-      niches: ["travel", "lifestyle"]
+      niches: ["travel-explore-india", "daily-vlogging"]
     },
     compensation: {
       hasBarter: true,
@@ -140,7 +140,7 @@ const opportunities: Array<{
       minFollowers: 40000,
       minEngagementRate: 2,
       allowedLocations: ["Delhi", "Bengaluru", "Chennai"],
-      niches: ["tech", "gadgets"]
+      niches: ["tech-gadgets"]
     },
     compensation: {
       hasBarter: true,
@@ -161,7 +161,7 @@ const opportunities: Array<{
       minFollowers: 12000,
       minEngagementRate: 3,
       allowedLocations: [],
-      niches: ["fashion", "lifestyle"]
+      niches: ["fashion-styling", "daily-vlogging"]
     },
     compensation: { hasBarter: false, fixedFee: "6000", cpvPer1000: "150" }
   }

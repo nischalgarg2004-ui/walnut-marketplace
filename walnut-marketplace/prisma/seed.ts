@@ -17,6 +17,7 @@ type CreatorSeed = {
   state: string;
   instagramHandle: string;
   followerCount: number;
+  postCount: number;
   avgEngagement: number;
 };
 
@@ -57,11 +58,12 @@ const creators: CreatorSeed[] = [
     fullName: "Priya Sharma",
     bio: "Skincare and glow routines; reel-first storytelling.",
     gender: "female",
-    niches: ["beauty", "skincare"],
+    niches: ["beauty-skincare", "hair-grooming"],
     city: "Mumbai",
     state: "Maharashtra",
     instagramHandle: "priya.ugc.mumbai",
     followerCount: 8500,
+    postCount: 412,
     avgEngagement: 4.2
   },
   {
@@ -69,11 +71,12 @@ const creators: CreatorSeed[] = [
     fullName: "Rahul Verma",
     bio: "Tech unboxings and honest gadget reviews.",
     gender: "male",
-    niches: ["tech", "gadgets"],
+    niches: ["tech-gadgets", "smartphones-reviews"],
     city: "Delhi",
     state: "Delhi",
     instagramHandle: "rahul.tech.delhi",
     followerCount: 120000,
+    postCount: 890,
     avgEngagement: 2.1
   },
   {
@@ -81,11 +84,12 @@ const creators: CreatorSeed[] = [
     fullName: "Ananya Iyer",
     bio: "Lifestyle vlogs and home aesthetic.",
     gender: "female",
-    niches: ["lifestyle", "home"],
+    niches: ["home-interiors", "daily-vlogging"],
     city: "Bengaluru",
     state: "Karnataka",
     instagramHandle: "ananya.life.blr",
     followerCount: 45000,
+    postCount: 520,
     avgEngagement: 3.5
   },
   {
@@ -93,11 +97,12 @@ const creators: CreatorSeed[] = [
     fullName: "Kunal Patel",
     bio: "Street food reviews and regional recipes.",
     gender: "male",
-    niches: ["food", "streetfood"],
+    niches: ["food-reviews-restaurants", "regional-food-culture"],
     city: "Ahmedabad",
     state: "Gujarat",
     instagramHandle: "kunal.eats.ahm",
     followerCount: 22000,
+    postCount: 340,
     avgEngagement: 5.1
   },
   {
@@ -105,11 +110,12 @@ const creators: CreatorSeed[] = [
     fullName: "Sneha Reddy",
     bio: "Micro skincare; authentic before/afters.",
     gender: "female",
-    niches: ["skincare", "beauty"],
+    niches: ["beauty-skincare", "hair-grooming"],
     city: "Hyderabad",
     state: "Telangana",
     instagramHandle: "sneha.skin.hyd",
     followerCount: 1800,
+    postCount: 96,
     avgEngagement: 6.2
   },
   {
@@ -117,11 +123,12 @@ const creators: CreatorSeed[] = [
     fullName: "Vikram Singh",
     bio: "Gym routines and supplement education.",
     gender: "male",
-    niches: ["fitness", "wellness"],
+    niches: ["fitness-strength", "health-nutrition"],
     city: "Pune",
     state: "Maharashtra",
     instagramHandle: "vikram.lift.pune",
     followerCount: 95000,
+    postCount: 610,
     avgEngagement: 2.8
   },
   {
@@ -129,11 +136,12 @@ const creators: CreatorSeed[] = [
     fullName: "Meera Nair",
     bio: "Weekend travel and budget itineraries.",
     gender: "female",
-    niches: ["travel", "lifestyle"],
+    niches: ["travel-explore-india", "budget-backpack-travel"],
     city: "Kochi",
     state: "Kerala",
     instagramHandle: "meera.wander.kochi",
     followerCount: 67000,
+    postCount: 280,
     avgEngagement: 4.0
   },
   {
@@ -141,11 +149,12 @@ const creators: CreatorSeed[] = [
     fullName: "Arjun Mehta",
     bio: "Short comedy skits and relatable humor.",
     gender: "male",
-    niches: ["comedy", "entertainment"],
+    niches: ["comedy-sketches", "memes-trends"],
     city: "Jaipur",
     state: "Rajasthan",
     instagramHandle: "arjun.laughs.jpr",
     followerCount: 200000,
+    postCount: 1200,
     avgEngagement: 1.9
   },
   {
@@ -153,11 +162,12 @@ const creators: CreatorSeed[] = [
     fullName: "Divya Krishnan",
     bio: "Outfit transitions and thrift styling.",
     gender: "female",
-    niches: ["fashion", "style"],
+    niches: ["fashion-styling", "wedding-lifestyle"],
     city: "Chennai",
     state: "Tamil Nadu",
     instagramHandle: "divya.style.chn",
     followerCount: 34000,
+    postCount: 210,
     avgEngagement: 3.9
   },
   {
@@ -165,11 +175,12 @@ const creators: CreatorSeed[] = [
     fullName: "Rohit Bose",
     bio: "Mobile gaming clips and esports commentary.",
     gender: "male",
-    niches: ["gaming", "esports"],
+    niches: ["mobile-gaming-esports", "gaming-pc-console"],
     city: "Kolkata",
     state: "West Bengal",
     instagramHandle: "rohit.gg.kol",
     followerCount: 56000,
+    postCount: 450,
     avgEngagement: 3.0
   }
 ];
@@ -240,7 +251,7 @@ function requirementsForBrand(brandKey: string): ReqSeed[] {
           minFollowers: 2000,
           minEngagementRate: 3,
           allowedLocations: ["Mumbai", "Delhi", "Bengaluru"],
-          niches: ["beauty", "skincare"]
+          niches: ["beauty-skincare"]
         },
         compensation: { hasBarter: true, barterNotes: "Full-size serum shipped", fixedFee: "0", cpvPer1000: "250" }
       },
@@ -253,7 +264,7 @@ function requirementsForBrand(brandKey: string): ReqSeed[] {
           minFollowers: 5000,
           minEngagementRate: 2.5,
           allowedLocations: [],
-          niches: ["skincare"]
+          niches: ["beauty-skincare"]
         },
         compensation: { hasBarter: false, fixedFee: "1000", cpvPer1000: "150" }
       },
@@ -266,7 +277,7 @@ function requirementsForBrand(brandKey: string): ReqSeed[] {
           minFollowers: 8000,
           minEngagementRate: null,
           allowedLocations: ["Mumbai", "Chennai", "Hyderabad"],
-          niches: ["beauty", "lifestyle"]
+          niches: ["beauty-skincare", "daily-vlogging"]
         },
         compensation: { hasBarter: true, barterNotes: "Product + ₹500 flat", fixedFee: "500", cpvPer1000: "200" }
       },
@@ -280,7 +291,7 @@ function requirementsForBrand(brandKey: string): ReqSeed[] {
           minFollowers: 10000,
           minEngagementRate: 3.5,
           allowedLocations: [],
-          niches: ["beauty"]
+          niches: ["beauty-skincare"]
         },
         compensation: { hasBarter: false, fixedFee: "2500", cpvPer1000: null }
       },
@@ -293,7 +304,7 @@ function requirementsForBrand(brandKey: string): ReqSeed[] {
           minFollowers: 1500,
           minEngagementRate: 4,
           allowedLocations: ["Pune", "Kochi", "Kolkata"],
-          niches: ["beauty", "lifestyle"]
+          niches: ["beauty-skincare", "daily-vlogging"]
         },
         compensation: { hasBarter: true, barterNotes: "Lip balm kit only", fixedFee: "0", cpvPer1000: "0" }
       }
@@ -308,7 +319,7 @@ function requirementsForBrand(brandKey: string): ReqSeed[] {
           minFollowers: 20000,
           minEngagementRate: 2,
           allowedLocations: ["Delhi", "Pune", "Bengaluru"],
-          niches: ["fitness", "wellness"]
+          niches: ["fitness-strength", "yoga-meditation"]
         },
         compensation: { hasBarter: true, barterNotes: "2kg protein tub", fixedFee: "1500", cpvPer1000: "120" }
       },
@@ -321,7 +332,7 @@ function requirementsForBrand(brandKey: string): ReqSeed[] {
           minFollowers: 15000,
           minEngagementRate: 3,
           allowedLocations: [],
-          niches: ["food", "fitness"]
+          niches: ["food-home-cooking", "fitness-strength"]
         },
         compensation: { hasBarter: false, fixedFee: "800", cpvPer1000: "100" }
       },
@@ -334,7 +345,7 @@ function requirementsForBrand(brandKey: string): ReqSeed[] {
           minFollowers: 50000,
           minEngagementRate: null,
           allowedLocations: ["Mumbai", "Chennai"],
-          niches: ["fitness", "lifestyle"]
+          niches: ["fitness-strength", "daily-vlogging"]
         },
         compensation: { hasBarter: false, fixedFee: "0", cpvPer1000: "300" }
       },
@@ -347,7 +358,7 @@ function requirementsForBrand(brandKey: string): ReqSeed[] {
           minFollowers: 35000,
           minEngagementRate: 2.8,
           allowedLocations: ["Ahmedabad", "Jaipur"],
-          niches: ["wellness", "lifestyle"]
+          niches: ["yoga-meditation", "daily-vlogging"]
         },
         compensation: { hasBarter: true, barterNotes: "7-day sample box", fixedFee: "2000", cpvPer1000: null }
       },
@@ -360,7 +371,7 @@ function requirementsForBrand(brandKey: string): ReqSeed[] {
           minFollowers: 8000,
           minEngagementRate: 2.5,
           allowedLocations: [],
-          niches: ["fitness"]
+          niches: ["fitness-strength"]
         },
         compensation: { hasBarter: false, fixedFee: "1200", cpvPer1000: "80" }
       }
@@ -376,7 +387,7 @@ function requirementsForBrand(brandKey: string): ReqSeed[] {
           minFollowers: 50000,
           minEngagementRate: 2,
           allowedLocations: ["Delhi", "Bengaluru"],
-          niches: ["tech", "gadgets"]
+          niches: ["tech-gadgets"]
         },
         compensation: { hasBarter: true, barterNotes: "Retail unit for review", fixedFee: "3000", cpvPer1000: "400" }
       },
@@ -389,7 +400,7 @@ function requirementsForBrand(brandKey: string): ReqSeed[] {
           minFollowers: 40000,
           minEngagementRate: 2.2,
           allowedLocations: [],
-          niches: ["tech", "fitness"]
+          niches: ["tech-gadgets", "fitness-strength"]
         },
         compensation: { hasBarter: false, fixedFee: "5000", cpvPer1000: "250" }
       },
@@ -402,7 +413,7 @@ function requirementsForBrand(brandKey: string): ReqSeed[] {
           minFollowers: 100000,
           minEngagementRate: 1.8,
           allowedLocations: ["Mumbai", "Hyderabad"],
-          niches: ["tech"]
+          niches: ["tech-gadgets"]
         },
         compensation: { hasBarter: false, fixedFee: "0", cpvPer1000: "350" }
       },
@@ -415,7 +426,7 @@ function requirementsForBrand(brandKey: string): ReqSeed[] {
           minFollowers: 25000,
           minEngagementRate: 3,
           allowedLocations: ["Kolkata", "Chennai"],
-          niches: ["tech", "lifestyle"]
+          niches: ["tech-gadgets", "daily-vlogging"]
         },
         compensation: { hasBarter: true, barterNotes: "Loaner unit 14 days", fixedFee: "1500", cpvPer1000: "180" }
       },
@@ -428,7 +439,7 @@ function requirementsForBrand(brandKey: string): ReqSeed[] {
           minFollowers: 60000,
           minEngagementRate: 2.5,
           allowedLocations: [],
-          niches: ["gaming", "tech"]
+          niches: ["mobile-gaming-esports", "tech-gadgets"]
         },
         compensation: { hasBarter: false, fixedFee: "4000", cpvPer1000: "300" }
       }
@@ -443,7 +454,7 @@ function requirementsForBrand(brandKey: string): ReqSeed[] {
           minFollowers: 10000,
           minEngagementRate: 4,
           allowedLocations: ["Ahmedabad", "Jaipur", "Delhi"],
-          niches: ["food", "streetfood"]
+          niches: ["food-reviews-restaurants", "regional-food-culture"]
         },
         compensation: { hasBarter: true, barterNotes: "Sample pack", fixedFee: "500", cpvPer1000: "200" }
       },
@@ -456,7 +467,7 @@ function requirementsForBrand(brandKey: string): ReqSeed[] {
           minFollowers: 8000,
           minEngagementRate: 3.5,
           allowedLocations: [],
-          niches: ["food", "lifestyle"]
+          niches: ["food-home-cooking", "daily-vlogging"]
         },
         compensation: { hasBarter: false, fixedFee: "1200", cpvPer1000: "150" }
       },
@@ -469,7 +480,7 @@ function requirementsForBrand(brandKey: string): ReqSeed[] {
           minFollowers: 20000,
           minEngagementRate: null,
           allowedLocations: ["Mumbai", "Pune"],
-          niches: ["food", "lifestyle"]
+          niches: ["food-home-cooking", "daily-vlogging"]
         },
         compensation: { hasBarter: true, barterNotes: "Product crates", fixedFee: "0", cpvPer1000: "220" }
       },
@@ -482,7 +493,7 @@ function requirementsForBrand(brandKey: string): ReqSeed[] {
           minFollowers: 5000,
           minEngagementRate: 4.5,
           allowedLocations: ["Bengaluru", "Chennai", "Kochi"],
-          niches: ["food"]
+          niches: ["food-home-cooking"]
         },
         compensation: { hasBarter: false, fixedFee: "900", cpvPer1000: null }
       },
@@ -495,7 +506,7 @@ function requirementsForBrand(brandKey: string): ReqSeed[] {
           minFollowers: 30000,
           minEngagementRate: 3,
           allowedLocations: [],
-          niches: ["food", "comedy"]
+          niches: ["food-home-cooking", "comedy-sketches"]
         },
         compensation: { hasBarter: true, barterNotes: "Coupon codes for audience", fixedFee: "700", cpvPer1000: "130" }
       }
@@ -510,7 +521,7 @@ function requirementsForBrand(brandKey: string): ReqSeed[] {
           minFollowers: 25000,
           minEngagementRate: 3,
           allowedLocations: ["Mumbai", "Delhi", "Bengaluru"],
-          niches: ["travel", "lifestyle"]
+          niches: ["travel-explore-india", "daily-vlogging"]
         },
         compensation: { hasBarter: false, fixedFee: "5000", cpvPer1000: "280" }
       },
@@ -523,7 +534,7 @@ function requirementsForBrand(brandKey: string): ReqSeed[] {
           minFollowers: 40000,
           minEngagementRate: 2.5,
           allowedLocations: ["Pune", "Kochi"],
-          niches: ["travel"]
+          niches: ["travel-explore-india"]
         },
         compensation: { hasBarter: true, barterNotes: "2D/1N voucher (T&C)", fixedFee: "2000", cpvPer1000: "200" }
       },
@@ -536,7 +547,7 @@ function requirementsForBrand(brandKey: string): ReqSeed[] {
           minFollowers: 15000,
           minEngagementRate: 4,
           allowedLocations: ["Jaipur", "Kolkata", "Chennai"],
-          niches: ["travel", "lifestyle"]
+          niches: ["travel-explore-india", "daily-vlogging"]
         },
         compensation: { hasBarter: false, fixedFee: "1500", cpvPer1000: "180" }
       },
@@ -549,7 +560,7 @@ function requirementsForBrand(brandKey: string): ReqSeed[] {
           minFollowers: 60000,
           minEngagementRate: null,
           allowedLocations: [],
-          niches: ["travel"]
+          niches: ["travel-explore-india"]
         },
         compensation: { hasBarter: false, fixedFee: "0", cpvPer1000: "320" }
       },
@@ -562,7 +573,7 @@ function requirementsForBrand(brandKey: string): ReqSeed[] {
           minFollowers: 20000,
           minEngagementRate: 3.2,
           allowedLocations: ["Chennai", "Hyderabad", "Mumbai"],
-          niches: ["travel", "lifestyle"]
+          niches: ["travel-explore-india", "daily-vlogging"]
         },
         compensation: { hasBarter: true, barterNotes: "Eco kit + tote", fixedFee: "3000", cpvPer1000: "150" }
       }
@@ -608,6 +619,7 @@ async function main() {
         instagramConnectedAt: new Date(),
         instagramAccessTokenEncrypted: "seed_token",
         followerCount: c.followerCount,
+        postCount: c.postCount,
         avgEngagement: c.avgEngagement
       },
       create: {
@@ -625,6 +637,7 @@ async function main() {
         instagramConnectedAt: new Date(),
         instagramAccessTokenEncrypted: "seed_token",
         followerCount: c.followerCount,
+        postCount: c.postCount,
         avgEngagement: c.avgEngagement
       }
     });
@@ -742,6 +755,7 @@ async function main() {
       state: c.state,
       niches: c.niches,
       followerCount: c.followerCount,
+      postCount: c.postCount,
       avgEngagement: c.avgEngagement,
       instagramHandle: c.instagramHandle
     })),

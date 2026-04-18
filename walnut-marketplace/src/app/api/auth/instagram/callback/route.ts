@@ -5,6 +5,7 @@ import {
   decodeInstagramState,
   encryptTokenForStorage,
   exchangeCodeForAccessToken,
+  fetchInstagramExtendedFields,
   fetchInstagramIdentity
 } from "@/lib/integrations/instagram";
 import { createSessionToken, getSessionUser, SESSION_COOKIE_NAME, sessionCookieSecure } from "@/lib/auth";
@@ -44,6 +45,8 @@ export async function GET(req: NextRequest) {
     } catch {
       return NextResponse.redirect(new URL("/login?error=instagram_profile_fetch_failed", req.nextUrl.origin));
     }
+    const extended = await fetchInstagramExtendedFields(accessToken);
+    const displayName = extended.profileName?.trim() || identity.username;
     const encryptedToken = encryptTokenForStorage(accessToken);
     const existingSession = getSessionUser(req);
     const linkedProfile = await db.creatorProfile.findUnique({
@@ -69,8 +72,13 @@ export async function GET(req: NextRequest) {
           role: UserRole.CREATOR,
           creatorProfile: {
             create: {
-              fullName: identity.username,
-              niches: []
+              fullName: displayName,
+              niches: [],
+              ...(extended.followersCount !== undefined ? { followerCount: extended.followersCount } : {}),
+              ...(extended.mediaCount !== undefined ? { postCount: extended.mediaCount } : {}),
+              ...(extended.followersCount !== undefined || extended.mediaCount !== undefined
+                ? { instagramStatsSyncedAt: new Date() }
+                : {})
             }
           }
         }
@@ -91,18 +99,31 @@ export async function GET(req: NextRequest) {
         instagramHandle: identity.username,
         instagramAccountType: identity.accountType,
         instagramConnectedAt: new Date(),
-        instagramAccessTokenEncrypted: encryptedToken
+        instagramAccessTokenEncrypted: encryptedToken,
+        ...(extended.profileName?.trim() ? { fullName: extended.profileName.trim() } : {}),
+        ...(extended.followersCount !== undefined ? { followerCount: extended.followersCount } : {}),
+        ...(extended.mediaCount !== undefined ? { postCount: extended.mediaCount } : {}),
+        ...(extended.followersCount !== undefined ||
+        extended.mediaCount !== undefined ||
+        extended.profileName?.trim()
+          ? { instagramStatsSyncedAt: new Date() }
+          : {})
       },
       create: {
         userId: user.id,
-        fullName: identity.username,
+        fullName: displayName,
         niches: [],
         instagramUserId: identity.userId,
         instagramUsername: identity.username,
         instagramHandle: identity.username,
         instagramAccountType: identity.accountType,
         instagramConnectedAt: new Date(),
-        instagramAccessTokenEncrypted: encryptedToken
+        instagramAccessTokenEncrypted: encryptedToken,
+        ...(extended.followersCount !== undefined ? { followerCount: extended.followersCount } : {}),
+        ...(extended.mediaCount !== undefined ? { postCount: extended.mediaCount } : {}),
+        ...(extended.followersCount !== undefined || extended.mediaCount !== undefined
+          ? { instagramStatsSyncedAt: new Date() }
+          : {})
       }
     });
 
