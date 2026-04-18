@@ -8,7 +8,10 @@ import { CREATOR_NICHE_SLUG_SET } from "@/lib/creator-niches";
 const creatorProfileSchema = z.object({
   fullName: z.string().min(2),
   bio: z.string().optional(),
-  gender: z.string().optional(),
+  gender: z.preprocess(
+    (v) => (v === "" || v === undefined ? null : v),
+    z.union([z.enum(["male", "female", "other"]), z.null()]).optional()
+  ),
   niches: z
     .array(z.string())
     .min(1)
@@ -19,8 +22,7 @@ const creatorProfileSchema = z.object({
   state: z.string().optional(),
   instagramHandle: z.string().optional(),
   followerCount: z.number().int().min(0).default(0),
-  postCount: z.number().int().min(0).default(0),
-  avgEngagement: z.number().min(0).default(0)
+  postCount: z.number().int().min(0).default(0)
 });
 
 export async function GET(req: NextRequest) {

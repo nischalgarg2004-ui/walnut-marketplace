@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
       },
       include: {
         requirement: { select: { id: true, title: true } },
-        creator: { select: { id: true, fullName: true, followerCount: true, avgEngagement: true } }
+        creator: { select: { id: true, fullName: true, followerCount: true } }
       },
       orderBy: { appliedAt: "desc" }
     });

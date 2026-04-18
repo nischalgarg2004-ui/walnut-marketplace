@@ -15,7 +15,6 @@ type ProfileRow = {
   instagramConnectedAt: string | null;
   followerCount: number;
   postCount: number;
-  avgEngagement: number;
   instagramStatsSyncedAt: string | null;
   instagramProfilePictureUrl: string | null;
 };
@@ -33,11 +32,27 @@ function formatCompact(n: number): string {
   return String(n);
 }
 
+/** Stored slug: male | female | other */
+function normalizeGender(g: string | null | undefined): string {
+  if (!g) return "";
+  const x = g.toLowerCase().trim();
+  if (x === "male" || x === "female" || x === "other") return x;
+  return "";
+}
+
+function formatGenderLabel(slug: string): string {
+  if (slug === "male") return "Male";
+  if (slug === "female") return "Female";
+  if (slug === "other") return "Other";
+  return "—";
+}
+
 export default function CreatorProfilePage() {
   const [message, setMessage] = useState("");
   const [syncMessage, setSyncMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [fullName, setFullName] = useState("");
   const [bio, setBio] = useState("");
   const [gender, setGender] = useState("");
@@ -45,7 +60,6 @@ export default function CreatorProfilePage() {
   const [state, setState] = useState("");
   const [followerCount, setFollowerCount] = useState(0);
   const [postCount, setPostCount] = useState(0);
-  const [avgEngagement, setAvgEngagement] = useState(0);
   const [selectedNiches, setSelectedNiches] = useState<string[]>([]);
   const [nicheAddValue, setNicheAddValue] = useState("");
   const [instagramConnected, setInstagramConnected] = useState(false);
@@ -79,12 +93,11 @@ export default function CreatorProfilePage() {
       const p = result.data as ProfileRow;
       setFullName(p.fullName ?? "");
       setBio(p.bio ?? "");
-      setGender(p.gender ?? "");
+      setGender(normalizeGender(p.gender));
       setCity(p.city ?? "");
       setState(p.state ?? "");
       setFollowerCount(p.followerCount ?? 0);
       setPostCount(p.postCount ?? 0);
-      setAvgEngagement(p.avgEngagement ?? 0);
       setSelectedNiches(Array.isArray(p.niches) ? p.niches : []);
       const connected = Boolean(p.instagramConnectedAt);
       setInstagramConnected(connected);
@@ -126,6 +139,12 @@ export default function CreatorProfilePage() {
     setMessage("");
   }
 
+  function cancelEdit() {
+    setEditing(false);
+    setMessage("");
+    void loadProfile();
+  }
+
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (selectedNiches.length < 1 || selectedNiches.length > 5) {
@@ -135,13 +154,12 @@ export default function CreatorProfilePage() {
     const payload = {
       fullName: fullName.trim(),
       bio: bio.trim() || undefined,
-      gender: gender.trim() || undefined,
       niches: selectedNiches,
       city: city.trim() || undefined,
       state: state.trim() || undefined,
       followerCount,
       postCount,
-      avgEngagement
+      gender: gender === "" ? null : (gender as "male" | "female" | "other")
     };
 
     const response = await fetch("/api/profiles/creator", {
@@ -152,9 +170,12 @@ export default function CreatorProfilePage() {
       body: JSON.stringify(payload)
     });
     const result = await response.json();
-    setMessage(response.ok ? `Profile saved for ${result.data.fullName}.` : `Failed: ${result.error}`);
     if (response.ok) {
+      setMessage(`Profile saved for ${result.data.fullName}.`);
+      setEditing(false);
       void loadProfile();
+    } else {
+      setMessage(`Failed: ${result.error}`);
     }
   }
 
@@ -246,10 +267,6 @@ export default function CreatorProfilePage() {
                       </span>
                       <span className="ml-1.5 text-sm text-muted-foreground">posts</span>
                     </div>
-                    <div>
-                      <span className="text-lg font-semibold tabular-nums text-foreground">{avgEngagement}%</span>
-                      <span className="ml-1.5 text-sm text-muted-foreground">avg. engagement</span>
-                    </div>
                   </div>
                   {instagramConnected && displayHandle ? (
                     <div className="mt-5 flex flex-col items-center gap-2 sm:items-start">
@@ -278,202 +295,261 @@ export default function CreatorProfilePage() {
               </div>
             </div>
 
-            <form onSubmit={onSubmit} className="form-grid p-6 sm:p-8" aria-labelledby="profile-details-heading">
-              <h3 id="profile-details-heading" className="form-full m-0 text-lg font-semibold text-foreground">
-                Details
-              </h3>
-
-              <div className="form-full">
-                <label className="mb-1 block text-sm font-medium text-foreground" htmlFor="fullName">
-                  Full name
-                </label>
-                <input
-                  id="fullName"
-                  name="fullName"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Name shown to brands"
-                  required
-                  autoComplete="name"
-                />
-              </div>
-
-              <div className="form-full">
-                <label className="mb-1 block text-sm font-medium text-foreground" id="niches-label">
-                  Niches (1–5)
-                </label>
-                <p className="help m-0 mb-2" id="niches-hint">
-                  Choose from the list, add up to five, then save. Brands use this for matching campaigns.
-                </p>
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <select
-                    className="max-w-md"
-                    aria-labelledby="niches-label"
-                    aria-describedby="niches-hint"
-                    value={nicheAddValue}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setNicheAddValue(v);
-                      onNicheSelect(v);
-                    }}
-                    disabled={availableNicheOptions.length === 0 || selectedNiches.length >= 5}
+            {!editing ? (
+              <div className="px-6 py-8 sm:px-8" aria-labelledby="profile-details-heading">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <h3 id="profile-details-heading" className="m-0 text-lg font-semibold text-foreground">
+                    Details
+                  </h3>
+                  <button type="button" className="btn primary shrink-0" onClick={() => setEditing(true)}>
+                    Edit profile
+                  </button>
+                </div>
+                <dl className="mt-6 grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Full name</dt>
+                    <dd className="mt-1 text-foreground">{fullName.trim() || "—"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Gender</dt>
+                    <dd className="mt-1 text-foreground">{gender ? formatGenderLabel(gender) : "—"}</dd>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Bio</dt>
+                    <dd className="mt-1 whitespace-pre-wrap text-foreground">{bio.trim() || "—"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">City</dt>
+                    <dd className="mt-1 text-foreground">{city.trim() || "—"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">State</dt>
+                    <dd className="mt-1 text-foreground">{state.trim() || "—"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Follower count</dt>
+                    <dd className="mt-1 tabular-nums text-foreground">{followerCount.toLocaleString()}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Post count</dt>
+                    <dd className="mt-1 tabular-nums text-foreground">{postCount.toLocaleString()}</dd>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Niches</dt>
+                    <dd className="mt-2">
+                      {selectedNiches.length > 0 ? (
+                        <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
+                          {selectedNiches.map((slug) => (
+                            <li
+                              key={slug}
+                              className="rounded-full border border-border bg-muted/50 px-3 py-1 text-sm text-foreground"
+                            >
+                              {nicheLabel(slug)}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </dd>
+                  </div>
+                </dl>
+                {syncMessage ? (
+                  <p
+                    className={`mt-6 text-sm ${syncMessage.includes("failed") || syncMessage.includes("Could not") ? "text-destructive" : "text-emerald-800"}`}
+                    role="status"
                   >
-                    <option value="">
-                      {selectedNiches.length >= 5 ? "Maximum niches selected" : "Add a niche…"}
-                    </option>
-                    {availableNicheOptions.map(({ slug, label }) => (
-                      <option key={slug} value={slug}>
-                        {label}
+                    {syncMessage}
+                  </p>
+                ) : null}
+              </div>
+            ) : (
+              <form onSubmit={onSubmit} className="form-grid p-6 sm:p-8" aria-labelledby="profile-edit-heading">
+                <div className="form-full flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <h3 id="profile-edit-heading" className="m-0 text-lg font-semibold text-foreground">
+                    Edit details
+                  </h3>
+                  <button type="button" className="btn ghost shrink-0" onClick={() => cancelEdit()}>
+                    Cancel
+                  </button>
+                </div>
+
+                <div className="form-full">
+                  <label className="mb-1 block text-sm font-medium text-foreground" htmlFor="fullName">
+                    Full name
+                  </label>
+                  <input
+                    id="fullName"
+                    name="fullName"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Name shown to brands"
+                    required
+                    autoComplete="name"
+                  />
+                </div>
+
+                <div className="form-full">
+                  <label className="mb-1 block text-sm font-medium text-foreground" id="niches-label">
+                    Niches (1–5)
+                  </label>
+                  <p className="help m-0 mb-2" id="niches-hint">
+                    Choose from the list, add up to five, then save. Brands use this for matching campaigns.
+                  </p>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <select
+                      className="max-w-md"
+                      aria-labelledby="niches-label"
+                      aria-describedby="niches-hint"
+                      value={nicheAddValue}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setNicheAddValue(v);
+                        onNicheSelect(v);
+                      }}
+                      disabled={availableNicheOptions.length === 0 || selectedNiches.length >= 5}
+                    >
+                      <option value="">
+                        {selectedNiches.length >= 5 ? "Maximum niches selected" : "Add a niche…"}
                       </option>
-                    ))}
+                      {availableNicheOptions.map(({ slug, label }) => (
+                        <option key={slug} value={slug}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {selectedNiches.length > 0 ? (
+                    <ul className="mt-3 flex list-none flex-wrap gap-2 p-0" aria-label="Selected niches">
+                      {selectedNiches.map((slug) => (
+                        <li key={slug}>
+                          <button
+                            type="button"
+                            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/60 px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+                            onClick={() => removeNiche(slug)}
+                          >
+                            {nicheLabel(slug)}
+                            <span className="text-muted-foreground" aria-hidden>
+                              ×
+                            </span>
+                            <span className="sr-only">Remove {nicheLabel(slug)}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="help m-0 mt-2">No niches yet — pick at least one from the dropdown.</p>
+                  )}
+                  <p className="help m-0 mt-1">{selectedNiches.length} of 5 selected</p>
+                </div>
+
+                <div className="form-full">
+                  <label className="mb-1 block text-sm font-medium text-foreground" htmlFor="bio">
+                    Short bio
+                  </label>
+                  <textarea
+                    id="bio"
+                    name="bio"
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    placeholder="What do you create? Tone, languages, audience."
+                    rows={4}
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-foreground" htmlFor="gender">
+                    Gender
+                  </label>
+                  <select
+                    id="gender"
+                    name="gender"
+                    value={gender}
+                    onChange={(e) => setGender(e.target.value)}
+                    autoComplete="sex"
+                  >
+                    <option value="">Select…</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
                   </select>
                 </div>
-                {selectedNiches.length > 0 ? (
-                  <ul className="mt-3 flex list-none flex-wrap gap-2 p-0" aria-label="Selected niches">
-                    {selectedNiches.map((slug) => (
-                      <li key={slug}>
-                        <button
-                          type="button"
-                          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/60 px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-                          onClick={() => removeNiche(slug)}
-                        >
-                          {nicheLabel(slug)}
-                          <span className="text-muted-foreground" aria-hidden>
-                            ×
-                          </span>
-                          <span className="sr-only">Remove {nicheLabel(slug)}</span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="help m-0 mt-2">No niches yet — pick at least one from the dropdown.</p>
-                )}
-                <p className="help m-0 mt-1">{selectedNiches.length} of 5 selected</p>
-              </div>
 
-              <div className="form-full">
-                <label className="mb-1 block text-sm font-medium text-foreground" htmlFor="bio">
-                  Short bio
-                </label>
-                <textarea
-                  id="bio"
-                  name="bio"
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  placeholder="What do you create? Tone, languages, audience."
-                  rows={4}
-                />
-              </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-foreground" htmlFor="city">
+                    City
+                  </label>
+                  <input id="city" name="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="City" />
+                </div>
 
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground" htmlFor="gender">
-                  Gender
-                </label>
-                <input
-                  id="gender"
-                  name="gender"
-                  value={gender}
-                  onChange={(e) => setGender(e.target.value)}
-                  placeholder="Optional"
-                  autoComplete="sex"
-                />
-              </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-foreground" htmlFor="state">
+                    State
+                  </label>
+                  <input
+                    id="state"
+                    name="state"
+                    value={state}
+                    onChange={(e) => setState(e.target.value)}
+                    placeholder="State / UT"
+                  />
+                </div>
 
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground" htmlFor="city">
-                  City
-                </label>
-                <input id="city" name="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="City" />
-              </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-foreground" htmlFor="followerCount">
+                    Follower count
+                  </label>
+                  <input
+                    id="followerCount"
+                    name="followerCount"
+                    type="number"
+                    min={0}
+                    inputMode="numeric"
+                    value={followerCount}
+                    onChange={(e) => setFollowerCount(Number(e.target.value))}
+                    disabled={instagramConnected}
+                    aria-describedby="followers-help"
+                  />
+                  <p id="followers-help" className="help m-0 mt-1">
+                    {instagramConnected
+                      ? "Synced from Instagram when you use Update from Instagram."
+                      : "Enter manually if Instagram is not connected."}
+                  </p>
+                </div>
 
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground" htmlFor="state">
-                  State
-                </label>
-                <input
-                  id="state"
-                  name="state"
-                  value={state}
-                  onChange={(e) => setState(e.target.value)}
-                  placeholder="State / UT"
-                />
-              </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-foreground" htmlFor="postCount">
+                    Post count (media)
+                  </label>
+                  <input
+                    id="postCount"
+                    name="postCount"
+                    type="number"
+                    min={0}
+                    inputMode="numeric"
+                    value={postCount}
+                    onChange={(e) => setPostCount(Number(e.target.value))}
+                    disabled={instagramConnected}
+                  />
+                </div>
 
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground" htmlFor="followerCount">
-                  Follower count
-                </label>
-                <input
-                  id="followerCount"
-                  name="followerCount"
-                  type="number"
-                  min={0}
-                  inputMode="numeric"
-                  value={followerCount}
-                  onChange={(e) => setFollowerCount(Number(e.target.value))}
-                  disabled={instagramConnected}
-                  aria-describedby="followers-help"
-                />
-                <p id="followers-help" className="help m-0 mt-1">
-                  {instagramConnected
-                    ? "Synced from Instagram when you use Update from Instagram."
-                    : "Enter manually if Instagram is not connected."}
-                </p>
-              </div>
+                {syncMessage ? (
+                  <p
+                    className={`form-full m-0 text-sm ${syncMessage.includes("failed") || syncMessage.includes("Could not") ? "text-destructive" : "text-emerald-800"}`}
+                    role="status"
+                  >
+                    {syncMessage}
+                  </p>
+                ) : null}
 
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground" htmlFor="postCount">
-                  Post count (media)
-                </label>
-                <input
-                  id="postCount"
-                  name="postCount"
-                  type="number"
-                  min={0}
-                  inputMode="numeric"
-                  value={postCount}
-                  onChange={(e) => setPostCount(Number(e.target.value))}
-                  disabled={instagramConnected}
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground" htmlFor="avgEngagement">
-                  Average engagement rate (%)
-                </label>
-                <input
-                  id="avgEngagement"
-                  name="avgEngagement"
-                  type="number"
-                  min={0}
-                  step="0.1"
-                  inputMode="decimal"
-                  value={avgEngagement}
-                  onChange={(e) => setAvgEngagement(Number(e.target.value))}
-                  aria-describedby="engagement-help"
-                />
-                <p id="engagement-help" className="help m-0 mt-1">
-                  Approximate average engagement on your posts (you can estimate).
-                </p>
-              </div>
-
-              {syncMessage ? (
-                <p
-                  className={`form-full m-0 text-sm ${syncMessage.includes("failed") || syncMessage.includes("Could not") ? "text-destructive" : "text-emerald-800"}`}
-                  role="status"
-                >
-                  {syncMessage}
-                </p>
-              ) : null}
-
-              <div className="form-full flex flex-wrap items-center gap-3 pt-2">
-                <button className="btn primary" type="submit">
-                  Save profile
-                </button>
-                <p className="help m-0">Saves bio, location, niches, and engagement. Instagram metrics stay in sync when you use the button above.</p>
-              </div>
-            </form>
+                <div className="form-full flex flex-wrap items-center gap-3 pt-2">
+                  <button className="btn primary" type="submit">
+                    Save profile
+                  </button>
+                  <p className="help m-0">Saves your details. Instagram follower/post counts stay in sync when you use Update from Instagram above.</p>
+                </div>
+              </form>
+            )}
           </>
         )}
         {message ? (

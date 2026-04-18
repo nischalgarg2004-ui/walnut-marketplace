@@ -8,7 +8,7 @@ type Application = {
   status: "APPLIED" | "WAITLISTED" | "APPROVED" | "REJECTED";
   pitch: string | null;
   requirement: { id: string; title: string };
-  creator: { id: string; fullName: string; followerCount: number; avgEngagement: number };
+  creator: { id: string; fullName: string; followerCount: number };
 };
 
 export default function BusinessApplicationsPage() {
@@ -140,9 +140,7 @@ export default function BusinessApplicationsPage() {
                 </label>
                 <span className={`status ${item.status.toLowerCase()}`}>{item.status}</span>
               </div>
-              <p className="muted">
-                Followers: {item.creator.followerCount} | Engagement: {item.creator.avgEngagement}%
-              </p>
+              <p className="muted">Followers: {item.creator.followerCount}</p>
               <p className="muted">{item.pitch ?? "No pitch provided."}</p>
               <div className="row">
                 <button
