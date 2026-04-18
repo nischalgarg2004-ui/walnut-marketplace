@@ -82,10 +82,8 @@ Walnut is now structured to support a preview-first Vercel workflow:
 
 - Use Vercel for hosted previews and stable deployments
 - Use a hosted PostgreSQL database for shared environments
-- Generate Prisma client during Vercel build with:
-  - `npm run vercel:build`
-- Apply shared-environment migrations explicitly with:
-  - `npm run prisma:migrate:deploy`
+- Vercel build command (`npm run vercel:build`) runs **`prisma migrate deploy`**, **`prisma generate`**, then **`next build`** when `VERCEL=1` (see `scripts/vercel-build.mjs`). Point `DATABASE_URL` at your Neon branch in each Vercel environment.
+- Manual migration apply (e.g. emergency): `npm run prisma:migrate:deploy` with the same `DATABASE_URL`.
 
 Operational reference:
 

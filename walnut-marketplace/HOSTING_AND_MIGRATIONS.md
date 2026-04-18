@@ -19,12 +19,18 @@ This document is the operational reference for hosting Walnut on Vercel now and 
 - `Preview`: Vercel preview deployments against a non-production hosted database
 - `Production`: stable hosted deployment against a production database
 
+## Neon (PostgreSQL)
+
+- In the **Neon** dashboard, copy the connection string for your branch (typically **`DATABASE_URL`**).
+- Use Neon’s **pooled** connection for serverless/Vercel if you enable the pooler; Prisma Migrate sometimes needs a **direct** (non-pooled) URL for `migrate deploy`. If Neon gives you two URLs, add the direct one as `DIRECT_URL` and set `directUrl = env("DIRECT_URL")` in `schema.prisma` (see [Prisma + Neon](https://www.prisma.io/docs/orm/overview/databases/neon)).
+- Connection strings must include SSL where Neon requires it (usually included in the dashboard copy).
+
 ## Required Environment Variables
 
 ### Baseline hosting
-- `DATABASE_URL`
+- `DATABASE_URL` (Neon Postgres URL)
 - `SESSION_SECRET`
-- `NEXT_PUBLIC_APP_URL`
+- `NEXT_PUBLIC_APP_URL` (your Vercel production URL, e.g. `https://your-app.vercel.app`)
 - `COMMISSION_PERCENT`
 
 ### Instagram OAuth (enable after hosted URL is stable)
@@ -39,13 +45,13 @@ This document is the operational reference for hosting Walnut on Vercel now and 
 
 ## Vercel Deployment Notes
 
-- `vercel.json` points builds to `npm run vercel:build`
-- `npm run vercel:build` runs:
-  - `prisma generate`
-  - `next build`
-- Migrations are intentionally **not** run automatically during Vercel build
-- Shared-environment migrations must be applied explicitly using:
-  - `npm run prisma:migrate:deploy`
+- `vercel.json` points builds to `npm run vercel:build`.
+- **`scripts/vercel-build.mjs`** (used on Vercel because `VERCEL=1` is set during build) runs in order:
+  1. **`prisma migrate deploy`** — applies committed migrations to the database pointed at by `DATABASE_URL` (your Neon branch).
+  2. **`prisma generate`**
+  3. **`next build`**
+- So **preview/production** databases are migrated **during the build**, as long as `DATABASE_URL` is set in that Vercel environment. If you use a **pooled** Neon URL and migrations fail, configure `DIRECT_URL` + `directUrl` in Prisma (see Neon section above).
+- Local/manual fallback: `npm run prisma:migrate:deploy` against the same `DATABASE_URL` if you ever need to run migrations outside CI.
 
 ## Prisma Rules
 
