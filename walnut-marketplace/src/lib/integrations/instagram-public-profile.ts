@@ -15,6 +15,13 @@ export type InstagramPublicProfile = {
   profilePictureUrl?: string;
 };
 
+export type InstagramProfileSyncMeta = {
+  usedGraph: boolean;
+  usedWebFallback: boolean;
+  graphError?: string;
+  webError?: string;
+};
+
 const IG_WEB_APP_ID = "936619743392459";
 
 /** Desktop Chrome — closer to what instagram.com expects than a bare fetch. */
@@ -242,20 +249,42 @@ export async function fetchInstagramPublicProfile(rawUsername: string): Promise<
 export async function fetchInstagramProfileForSync(opts: {
   username: string;
   accessToken?: string | null;
-}): Promise<InstagramPublicProfile> {
+}): Promise<InstagramPublicProfile & { meta: InstagramProfileSyncMeta }> {
   let graphLayer: InstagramPublicProfile = {};
+  let graphError: string | undefined;
+  let usedGraph = false;
   if (opts.accessToken) {
-    const g = await fetchInstagramGraphMeFields(opts.accessToken);
-    graphLayer = graphMeFieldsToPublic(g);
+    try {
+      const g = await fetchInstagramGraphMeFields(opts.accessToken);
+      graphLayer = graphMeFieldsToPublic(g);
+      usedGraph = hasAnyData(graphLayer);
+    } catch (err) {
+      graphError = err instanceof Error ? err.message : "graph_fetch_failed";
+    }
   }
 
-  const webLayer = await fetchInstagramPublicProfileBestEffort(opts.username);
+  let webLayer: InstagramPublicProfile = {};
+  let webError: string | undefined;
+  try {
+    webLayer = await fetchInstagramPublicProfileBestEffort(opts.username);
+  } catch (err) {
+    webError = err instanceof Error ? err.message : "web_fetch_failed";
+  }
   const merged = mergePreferFirst(graphLayer, webLayer);
+  const usedWebFallback = hasAnyData(webLayer);
 
   if (!hasAnyData(merged)) {
     throw new Error(
       "Could not sync this profile. If you use Instagram Login, try reconnecting Instagram. Public web data can be blocked from some servers."
     );
   }
-  return merged;
+  return {
+    ...merged,
+    meta: {
+      usedGraph,
+      usedWebFallback,
+      graphError,
+      webError
+    }
+  };
 }

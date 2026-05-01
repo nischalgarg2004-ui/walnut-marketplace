@@ -705,6 +705,7 @@ async function main() {
               minFollowers: r.eligibility.minFollowers,
               minEngagementRate: r.eligibility.minEngagementRate ?? null,
               allowedLocations: r.eligibility.allowedLocations,
+              allowedDistrictIds: [],
               niches: r.eligibility.niches
             }
           },
@@ -779,8 +780,8 @@ async function main() {
       creatorEarnings: "/creator/earnings",
       businessHome: "/business",
       businessProfile: "/business/profile",
-      businessPost: "/business/requirements",
-      businessApps: "/business/applications",
+      businessPost: "/business/campaigns/new",
+      businessApps: "/business/campaigns",
       adminHome: "/admin"
     }
   };

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getRequiredSessionUser, requireRole } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { notifyUser, writeAudit } from "@/lib/activity-log";
 import { calculatePayout } from "@/lib/payment";
 import { RazorpayProvider } from "@/lib/payments/razorpay";
 
@@ -21,19 +22,40 @@ export async function POST(req: NextRequest) {
       where: { id: payload.contractId },
       include: {
         requirement: { include: { compensation: true } },
-        performanceReport: true
+        performanceReport: true,
+        deliverables: true,
+        barterShipment: true,
+        payouts: { where: { status: { in: ["PENDING", "PROCESSING", "PAID"] } }, take: 1 },
+        creator: { select: { userId: true } }
       }
     });
     if (!contract || !contract.requirement.compensation) {
       return NextResponse.json({ error: "Contract or compensation not found" }, { status: 404 });
     }
+    if (contract.status !== "ACTIVE" && contract.status !== "COMPLETED") {
+      return NextResponse.json({ error: "Contract must be ACTIVE or COMPLETED for payout" }, { status: 400 });
+    }
+    if (contract.payouts.length > 0) {
+      return NextResponse.json({ error: "A payout already exists or is processing for this contract" }, { status: 400 });
+    }
+    const allApproved = contract.deliverables.every((d) => d.status === "APPROVED" || d.status === "PUBLISHED");
+    if (!allApproved) {
+      return NextResponse.json({ error: "All deliverables must be approved before payout" }, { status: 400 });
+    }
+    if (contract.requirement.compensation.hasBarter && contract.barterShipment?.status !== "RECEIVED") {
+      return NextResponse.json({ error: "Barter shipment must be marked RECEIVED before payout" }, { status: 400 });
+    }
 
     const cpvRate = Number(contract.requirement.compensation.cpvRatePer1000 ?? 0);
     const requireVerified =
       cpvRate > 0 && process.env.CPV_PAYOUT_REQUIRE_VERIFIED !== "0";
-    if (requireVerified && contract.performanceReport?.status !== "VERIFIED") {
+    const prStatus = contract.performanceReport?.status;
+    const metricsOkForCpv = prStatus === "VERIFIED";
+    if (requireVerified && !metricsOkForCpv) {
       return NextResponse.json(
-        { error: "CPV payout requires verified view metrics. Run metrics sync or verify performance first." },
+        {
+          error: "CPV payout needs verified Instagram Graph metrics before payout trigger."
+        },
         { status: 400 }
       );
     }
@@ -80,6 +102,19 @@ export async function POST(req: NextRequest) {
         payoutRef: providerResult.providerRef,
         status: providerResult.status === "failed" ? "FAILED" : "PROCESSING"
       }
+    });
+    await writeAudit({
+      actorUserId: user.userId,
+      entityType: "Payout",
+      entityId: updatedPayout.id,
+      action: "PAYOUT_TRIGGERED",
+      metadata: { contractId: contract.id, netAmount: calc.netAmount, views: payload.viewsCount }
+    });
+    await notifyUser({
+      userId: contract.creator.userId,
+      type: "PAYOUT",
+      title: "Payout initiated",
+      body: "A payout has been initiated for your approved deal."
     });
 
     return NextResponse.json({ data: updatedPayout }, { status: 201 });

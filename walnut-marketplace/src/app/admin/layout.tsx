@@ -21,18 +21,27 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="min-h-[100dvh] bg-background">
-      <header className="sticky top-0 z-sticky border-b border-border bg-card/95 px-4 py-3 backdrop-blur">
-        <nav className="mx-auto flex max-w-7xl flex-wrap items-center gap-2 text-sm">
-          <Link className="font-semibold text-foreground" href="/admin">
-            Admin
-          </Link>
-          <span className="text-muted-foreground">·</span>
+      <header className="sticky top-0 z-sticky border-b border-border bg-card/95 px-4 py-3 backdrop-blur-xl">
+        <nav className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 text-sm">
+          <div className="flex items-center gap-2">
+            <Link className="font-semibold text-foreground" href="/admin">
+              Admin
+            </Link>
+            <span className="text-muted-foreground">/</span>
+            <Link className="text-muted-foreground hover:text-foreground" href="/admin/operations">
+              Operations
+            </Link>
+            <span className="text-muted-foreground">/</span>
+            <Link className="text-muted-foreground hover:text-foreground" href="/notifications">
+              Notifications
+            </Link>
+          </div>
           <Link className="text-muted-foreground hover:text-foreground" href="/">
             Marketing site
           </Link>
         </nav>
       </header>
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-5">{children}</div>
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-5 md:px-6">{children}</div>
     </div>
   );
 }

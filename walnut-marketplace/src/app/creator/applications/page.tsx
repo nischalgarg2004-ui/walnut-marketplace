@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { PagePanel, PageScaffold } from "@/components/ui/PageScaffold";
 
 type AppItem = {
   id: string;
@@ -32,15 +33,20 @@ export default function CreatorApplicationsPage() {
   }, []);
 
   return (
-    <section className="stack">
-      <div className="card hero">
-        <h1 className="title">Sent Applications</h1>
-        <p className="subtitle">Track request status across all opportunities.</p>
-      </div>
-      <div className="card list">
+    <PageScaffold
+      eyebrow="Creator"
+      title="Sent applications"
+      description="Track request status across all opportunities."
+      actions={
+        <Link className="btn ghost" href="/creator/opportunities">
+          Browse opportunities
+        </Link>
+      }
+    >
+      <PagePanel className="list">
         {!loading && items.length === 0 ? <p className="help">No applications sent yet.</p> : null}
         {items.map((item) => (
-          <article className="card" key={item.id}>
+          <article className="focus-surface p-4" key={item.id}>
             <div className="item-head">
               <h3 className="item-title">{item.requirement.title}</h3>
               <span className={`status ${item.status.toLowerCase()}`}>{item.status}</span>
@@ -52,7 +58,7 @@ export default function CreatorApplicationsPage() {
             </Link>
           </article>
         ))}
-      </div>
-    </section>
+      </PagePanel>
+    </PageScaffold>
   );
 }

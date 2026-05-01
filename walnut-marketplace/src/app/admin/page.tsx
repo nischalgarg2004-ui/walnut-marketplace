@@ -1,14 +1,24 @@
+import Link from "next/link";
+import { PagePanel, PageScaffold } from "@/components/ui/PageScaffold";
+
 export default function AdminDashboardPage() {
   return (
-    <section className="stack">
-      <div className="card hero">
-        <h1 className="title">Admin Operations Hub</h1>
-        <p className="subtitle">
-          Moderate marketplace activity, resolve payout exceptions, and monitor platform health.
-        </p>
-      </div>
-
-      <div className="layout-grid three">
+    <PageScaffold
+      eyebrow="Admin"
+      title="Operations hub"
+      description="Moderate marketplace activity, resolve payout exceptions, and monitor platform health from a single command surface."
+      actions={
+        <>
+          <Link className="btn ghost" href="/admin/audit-log">
+            Audit log
+          </Link>
+          <Link className="btn primary" href="/admin/incident-center">
+            Incident center
+          </Link>
+        </>
+      }
+    >
+      <section className="layout-grid three">
         <div className="stat">
           <p className="stat-label">Moderation</p>
           <p className="stat-value">Users + Requirements</p>
@@ -21,17 +31,15 @@ export default function AdminDashboardPage() {
           <p className="stat-label">Observability</p>
           <p className="stat-value">Metrics + Audit trail</p>
         </div>
-      </div>
-
-      <div className="card">
-        <h2 className="section-title">Primary Responsibilities</h2>
+      </section>
+      <PagePanel title="Primary responsibilities">
         <ul className="clean">
           <li>Requirement and profile moderation queues</li>
           <li>Payout exception handling and reconciliation</li>
           <li>Commission controls and dispute notes</li>
           <li>Audit log reviews and metrics tracking</li>
         </ul>
-      </div>
-    </section>
+      </PagePanel>
+    </PageScaffold>
   );
 }

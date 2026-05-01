@@ -18,3 +18,17 @@ export async function requireConnectedCreator(req: NextRequest) {
   }
   return { user, creatorProfileId: profile.id };
 }
+
+/** Session creator with profile — does not require Instagram OAuth to load profile state. */
+export async function requireCreatorProfile(req: NextRequest) {
+  const user = getRequiredSessionUser(req);
+  requireRole(user, [UserRole.CREATOR, UserRole.ADMIN]);
+  const profile = await db.creatorProfile.findUnique({
+    where: { userId: user.userId },
+    select: { id: true }
+  });
+  if (!profile) {
+    throw new Error("Creator profile not found");
+  }
+  return { user, creatorProfileId: profile.id };
+}

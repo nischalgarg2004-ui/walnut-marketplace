@@ -1,20 +1,30 @@
-type Eligibility = {
+export type Eligibility = {
   genderAllowed: string[];
   minFollowers: number;
   minEngagementRate: number | null;
   allowedLocations: string[];
+  allowedDistrictIds: string[];
   niches: string[];
 };
 
-type CreatorSignals = {
+export type CreatorSignals = {
   gender?: string | null;
   followerCount: number;
   avgEngagement: number;
   location?: string | null;
   niches: string[];
+  indiaDistrictId?: string | null;
 };
 
-export function isEligible(eligibility: Eligibility, creator: CreatorSignals): boolean {
+export type EligibilityOptions = {
+  hasBarter: boolean;
+};
+
+export function isEligible(
+  eligibility: Eligibility,
+  creator: CreatorSignals,
+  opts: EligibilityOptions
+): boolean {
   if (
     eligibility.genderAllowed.length > 0 &&
     creator.gender &&
@@ -32,12 +42,21 @@ export function isEligible(eligibility: Eligibility, creator: CreatorSignals): b
     return false;
   }
 
-  if (
-    eligibility.allowedLocations.length > 0 &&
-    creator.location &&
-    !eligibility.allowedLocations.includes(creator.location)
-  ) {
-    return false;
+  if (opts.hasBarter) {
+    if (eligibility.allowedDistrictIds.length > 0) {
+      if (!creator.indiaDistrictId) return false;
+      if (!eligibility.allowedDistrictIds.includes(creator.indiaDistrictId)) {
+        return false;
+      }
+    } else if (eligibility.allowedLocations.length > 0) {
+      if (
+        creator.location &&
+        !eligibility.allowedLocations.includes(creator.location)
+      ) {
+        return false;
+      }
+      if (!creator.location) return false;
+    }
   }
 
   if (eligibility.niches.length > 0) {

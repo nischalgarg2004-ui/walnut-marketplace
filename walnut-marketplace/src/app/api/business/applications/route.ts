@@ -1,7 +1,22 @@
-import { UserRole } from "@prisma/client";
+import { ApplicationStatus, UserRole } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { getRequiredSessionUser, requireRole } from "@/lib/auth";
 import { db } from "@/lib/db";
+
+const creatorSelect = {
+  id: true,
+  fullName: true,
+  followerCount: true,
+  postCount: true,
+  bio: true,
+  niches: true,
+  avgEngagement: true,
+  instagramHandle: true,
+  instagramUsername: true,
+  instagramProfilePictureUrl: true,
+  indiaStateId: true,
+  indiaDistrictId: true
+} as const;
 
 export async function GET(req: NextRequest) {
   try {
@@ -15,15 +30,28 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Business profile not found" }, { status: 400 });
     }
 
+    const requirementId = req.nextUrl.searchParams.get("requirementId");
+    const statusParam = req.nextUrl.searchParams.get("status");
+
+    const where: {
+      requirement: { businessId: string };
+      requirementId?: string;
+      status?: ApplicationStatus;
+    } = {
+      requirement: { businessId: business.id }
+    };
+    if (requirementId) {
+      where.requirementId = requirementId;
+    }
+    if (statusParam && ["APPLIED", "WAITLISTED", "APPROVED", "REJECTED"].includes(statusParam)) {
+      where.status = statusParam as ApplicationStatus;
+    }
+
     const applications = await db.application.findMany({
-      where: {
-        requirement: {
-          businessId: business.id
-        }
-      },
+      where,
       include: {
         requirement: { select: { id: true, title: true } },
-        creator: { select: { id: true, fullName: true, followerCount: true } }
+        creator: { select: creatorSelect }
       },
       orderBy: { appliedAt: "desc" }
     });

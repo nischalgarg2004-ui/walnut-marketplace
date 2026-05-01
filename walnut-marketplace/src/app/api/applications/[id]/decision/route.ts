@@ -2,6 +2,8 @@ import { UserRole } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { getRequiredSessionUser, requireRole } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { notifyUser, writeAudit } from "@/lib/activity-log";
+import { createDeliverablesForContract } from "@/lib/seed-contract-deliverables";
 import { decisionSchema } from "@/lib/validation";
 
 type Params = { params: Promise<{ id: string }> };
@@ -28,6 +30,19 @@ export async function POST(req: NextRequest, { params }: Params) {
       }
     }
 
+    const existingContract = await db.contract.findUnique({
+      where: { applicationId: application.id }
+    });
+    if (existingContract && payload.status !== "APPROVED") {
+      return NextResponse.json(
+        { error: "Cannot change application away from APPROVED once a contract exists" },
+        { status: 400 }
+      );
+    }
+    if (application.status === "REJECTED" && payload.status === "APPROVED") {
+      return NextResponse.json({ error: "Cannot approve a rejected application" }, { status: 400 });
+    }
+
     const updated = await db.application.update({
       where: { id },
       data: {
@@ -44,26 +59,44 @@ export async function POST(req: NextRequest, { params }: Params) {
         approvedAt: new Date().toISOString()
       };
 
-      const existingContract = await db.contract.findUnique({
-        where: { applicationId: application.id }
-      });
       if (!existingContract) {
-        const created = await db.contract.create({
-          data: {
-            requirementId: application.requirementId,
+        await db.$transaction(async (tx) => {
+          const contract = await tx.contract.create({
+            data: {
+              requirementId: application.requirementId,
+              creatorId: application.creatorId,
+              businessId: application.requirement.businessId,
+              applicationId: application.id,
+              termsSnapshotJson: termsSnapshot
+            }
+          });
+          await createDeliverablesForContract(tx, {
+            contractId: contract.id,
             creatorId: application.creatorId,
-            businessId: application.requirement.businessId,
-            applicationId: application.id,
-            termsSnapshotJson: termsSnapshot
+            requirement: application.requirement
+          });
+          if (application.requirement.compensation?.hasBarter) {
+            await tx.barterShipment.create({
+              data: { contractId: contract.id }
+            });
           }
         });
-        if (application.requirement.compensation?.hasBarter) {
-          await db.barterShipment.create({
-            data: { contractId: created.id }
-          });
-        }
       }
     }
+
+    await writeAudit({
+      actorUserId: user.userId,
+      entityType: "Application",
+      entityId: application.id,
+      action: `DECISION_${payload.status}`,
+      metadata: { reason: payload.reason ?? null }
+    });
+    await notifyUser({
+      userId: application.creator.userId,
+      type: "APPLICATION_DECISION",
+      title: `Application ${payload.status.toLowerCase()}`,
+      body: `Your application for "${application.requirement.title}" is now ${payload.status.toLowerCase()}.`
+    });
 
     return NextResponse.json({ data: updated });
   } catch (error) {

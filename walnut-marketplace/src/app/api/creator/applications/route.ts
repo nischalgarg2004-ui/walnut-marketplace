@@ -7,15 +7,25 @@ export async function GET(req: NextRequest) {
     const { creatorProfileId } = await requireConnectedCreator(req);
     const items = await db.application.findMany({
       where: { creatorId: creatorProfileId },
-      include: {
+      select: {
+        id: true,
+        status: true,
+        appliedAt: true,
         requirement: {
           select: {
             id: true,
             title: true,
             status: true,
+            category: true,
             business: { select: { brandName: true } }
           }
-        }
+        },
+        clippingLifecycleStatus: true,
+        clippingDestinationHandle: true,
+        clippingSampleUrl: true,
+        clippingFinalUrl: true,
+        clippingVerifiedAt: true,
+        decisionReason: true
       },
       orderBy: { appliedAt: "desc" }
     });

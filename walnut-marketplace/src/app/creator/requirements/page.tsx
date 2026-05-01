@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Toast from "@/components/ui/Toast";
+import { PagePanel, PageScaffold } from "@/components/ui/PageScaffold";
 
 type Requirement = {
   id: string;
@@ -55,13 +56,12 @@ export default function CreatorRequirementsPage() {
   }
 
   return (
-    <section className="stack">
-      <div className="card hero">
-        <h1 className="title">Opportunity Feed</h1>
-        <p className="subtitle">Apply to requirements that align with your niche and audience profile.</p>
-      </div>
-
-      <div className="card">
+    <PageScaffold
+      eyebrow="Creator"
+      title="Opportunity feed"
+      description="Apply to requirements that align with your niche and audience profile."
+    >
+      <PagePanel>
         {loading && (
           <div className="list">
             <div className="skeleton skeleton-card" />
@@ -77,7 +77,7 @@ export default function CreatorRequirementsPage() {
             </div>
           )}
           {items.map((item) => (
-            <article key={item.id} className="card">
+            <article key={item.id} className="focus-surface p-4">
               <div className="item-head">
                 <h3 className="item-title">{item.title}</h3>
                 <span className="pill">Open</span>
@@ -93,8 +93,8 @@ export default function CreatorRequirementsPage() {
             </article>
           ))}
         </div>
-      </div>
+      </PagePanel>
       <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: "", type: "info" })} />
-    </section>
+    </PageScaffold>
   );
 }

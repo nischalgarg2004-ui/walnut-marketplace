@@ -5,10 +5,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { cn } from "@/lib/cn";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const NAV: { href: Route; label: string }[] = [
   { href: "/creator", label: "Home" },
   { href: "/creator/opportunities", label: "Opportunities" },
+  { href: "/creator/clips", label: "Clips" },
   { href: "/creator/applications", label: "Applications" },
   { href: "/creator/deals", label: "Deals" },
   { href: "/creator/earnings", label: "Earnings" },
@@ -41,15 +43,15 @@ export function CreatorAppShell({
       <aside
         id="creator-sidebar"
         className={cn(
-          "fixed inset-y-0 left-0 z-modal flex w-56 flex-col border-r border-border bg-sidebar text-sidebar-foreground transition-transform lg:static lg:z-0 lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-modal flex w-60 flex-col border-r border-border bg-sidebar text-sidebar-foreground transition-transform lg:static lg:z-0 lg:translate-x-0",
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         <div className="flex h-14 items-center gap-2 border-b border-white/10 px-4">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-xs font-bold text-primary-foreground">
-            W
+          <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-white/20 bg-primary/20">
+            <img src="/brand/ongram/logo-round-light.png" alt="OnGram" className="h-full w-full object-cover" />
           </span>
-          <span className="font-semibold">Walnut</span>
+          <span className="font-semibold">OnGram</span>
         </div>
         <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-3 pb-24" aria-label="Creator">
           {NAV.map((item) => {
@@ -71,6 +73,9 @@ export function CreatorAppShell({
         </nav>
         <div className="absolute bottom-0 left-0 right-0 border-t border-white/10 p-3 text-xs text-sidebar-foreground/70">
           <p className="truncate">{userEmail}</p>
+          <div className="mt-2 flex items-center gap-2">
+            <ThemeToggle compact />
+          </div>
           <button type="button" className="mt-2 text-sm font-medium text-white hover:underline" onClick={logout}>
             Log out
           </button>
@@ -111,7 +116,7 @@ export function CreatorAppShell({
           </div>
         </header>
 
-        <main id="main-content" className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-5 md:px-6">
+        <main id="main-content" className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-5 md:px-6">
           {children}
         </main>
       </div>

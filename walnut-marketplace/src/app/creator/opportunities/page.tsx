@@ -1,14 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { OpportunityCard } from "@/components/design-system/OpportunityCard";
+import { LinkedInCampaignPost, type LinkedInCampaignPostData } from "@/components/design-system/LinkedInCampaignPost";
 import Toast from "@/components/ui/Toast";
 
 type Row = {
   id: string;
   title: string;
   brief: string;
+  postText?: string | null;
+  postImageUrl?: string | null;
+  status: string;
   createdAt: string;
+  spentAmount?: number;
+  authorHref?: string;
+  criteriaNarrative?: string;
+  category?: "UGC" | "CLIPPING";
+  clippingSummary?: { sourceCount?: number } | null;
+  personaFit?: boolean;
   eligible?: boolean;
   business?: { brandName?: string };
   compensation?: {
@@ -16,6 +25,8 @@ type Row = {
     cpvRatePer1000: string | null;
     hasBarter: boolean;
   };
+  _count?: { reactions: number; comments: number; shareEvents: number };
+  viewerReaction?: "LIKE" | null;
 };
 
 export default function CreatorOpportunitiesPage() {
@@ -25,6 +36,7 @@ export default function CreatorOpportunitiesPage() {
   const [eligibleOnly, setEligibleOnly] = useState(true);
   const [dealType, setDealType] = useState<string>("all");
   const [sort, setSort] = useState<string>("newest");
+  const [categoryFilter, setCategoryFilter] = useState<"ALL" | "UGC" | "CLIPPING">("ALL");
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" }>({
     message: "",
     type: "info"
@@ -41,6 +53,7 @@ export default function CreatorOpportunitiesPage() {
     params.set("eligibleOnly", eligibleOnly ? "true" : "false");
     if (dealType !== "all") params.set("dealType", dealType);
     params.set("sort", sort);
+    if (categoryFilter !== "ALL") params.set("category", categoryFilter);
     const response = await fetch(`/api/creator/opportunities?${params.toString()}`);
     const result = await response.json();
     if (!response.ok) {
@@ -56,7 +69,7 @@ export default function CreatorOpportunitiesPage() {
     load()
       .catch(() => setToast({ message: "Failed to load opportunities", type: "error" }))
       .finally(() => setLoading(false));
-  }, [eligibleOnly, dealType, sort]);
+  }, [eligibleOnly, dealType, sort, categoryFilter]);
 
   return (
     <section className="stack">
@@ -93,6 +106,25 @@ export default function CreatorOpportunitiesPage() {
             <option value="value">Highest value (approx.)</option>
           </select>
         </label>
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+          <span className="text-sm font-medium text-muted-foreground">Category</span>
+          <div className="inline-flex min-h-touch rounded-full border border-border bg-muted/40 p-1 shadow-sm">
+            {(["ALL", "UGC", "CLIPPING"] as const).map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                className={`min-h-touch rounded-full px-4 py-1.5 text-xs font-semibold transition ${
+                  categoryFilter === cat
+                    ? "bg-primary text-primary-foreground shadow"
+                    : "text-muted-foreground hover:bg-background hover:text-foreground"
+                }`}
+                onClick={() => setCategoryFilter(cat)}
+              >
+                {cat === "ALL" ? "All" : cat === "UGC" ? "UGC" : "Clipping"}
+              </button>
+            ))}
+          </div>
+        </div>
         {meta ? (
           <span className="muted">
             {meta.total} result{meta.total === 1 ? "" : "s"}
@@ -106,7 +138,7 @@ export default function CreatorOpportunitiesPage() {
             <div className="skeleton skeleton-card" />
           </div>
         )}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4">
           {!loading && items.length === 0 && (
             <div className="empty md:col-span-2">
               <div className="empty-visual" />
@@ -114,29 +146,30 @@ export default function CreatorOpportunitiesPage() {
             </div>
           )}
           {items.map((item) => {
-            const payParts: string[] = [];
-            if (item.compensation?.fixedFeeAmount) payParts.push(`Fixed ${item.compensation.fixedFeeAmount}`);
-            if (item.compensation?.cpvRatePer1000) payParts.push(`CPV ${item.compensation.cpvRatePer1000}/1k`);
-            if (item.compensation?.hasBarter) payParts.push("Barter");
-            const metaLine = [
-              item.business?.brandName,
-              item.eligible === false ? "Not eligible" : "Eligible",
-              payParts.join(" · ")
-            ]
-              .filter(Boolean)
-              .join(" · ");
-            return (
-              <OpportunityCard
-                key={item.id}
-                id={item.id}
-                title={item.title}
-                briefExcerpt={item.brief.length > 200 ? `${item.brief.slice(0, 200)}…` : item.brief}
-                brandName={item.business?.brandName}
-                metaLine={metaLine}
-                href={`/creator/opportunity/${item.id}`}
-                ctaLabel="View & apply"
-              />
-            );
+            const categoryLabel = item.category ?? "UGC";
+            const clippingNote =
+              categoryLabel === "CLIPPING" && item.clippingSummary?.sourceCount
+                ? `\n\nClipping sources: ${item.clippingSummary.sourceCount}`
+                : "";
+            const post: LinkedInCampaignPostData = {
+              id: item.id,
+              title: item.title,
+              postText: `${item.postText ?? item.brief}${clippingNote}`,
+              postImageUrl: item.postImageUrl ?? null,
+              brandName: item.business?.brandName ?? "Brand",
+              createdAt: item.createdAt,
+              reactionCount: item._count?.reactions ?? 0,
+              commentCount: item._count?.comments ?? 0,
+              shareCount: item._count?.shareEvents ?? 0,
+              viewerReaction: item.viewerReaction ?? null,
+              spentAmount: item.spentAmount ?? 0,
+              authorHref: item.authorHref ?? `/creator/opportunity/${item.id}`,
+              criteriaNarrative: item.criteriaNarrative ?? "",
+              postHref: `/creator/opportunity/${item.id}`,
+              applyHref: item.personaFit === false ? "/creator/profile" : `/creator/opportunity/${item.id}`,
+              applyLabel: item.personaFit === false ? "Set up clipping profile" : "Apply"
+            };
+            return <LinkedInCampaignPost key={item.id} post={post} />;
           })}
         </div>
       </div>

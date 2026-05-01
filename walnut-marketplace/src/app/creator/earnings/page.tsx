@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { PagePanel, PageScaffold } from "@/components/ui/PageScaffold";
 
 type Earning = {
   id: string;
@@ -36,19 +37,15 @@ export default function CreatorEarningsPage() {
   );
 
   return (
-    <section className="stack">
-      <div className="card hero">
-        <h1 className="title">Earnings</h1>
-        <p className="subtitle">Track payout history and net earnings.</p>
-      </div>
-      <div className="card">
+    <PageScaffold eyebrow="Creator" title="Earnings" description="Track payout history and net earnings.">
+      <PagePanel>
         <p className="stat-label">Total net earnings</p>
         <p className="stat-value">{totalNet.toFixed(2)} INR</p>
-      </div>
-      <div className="card list">
+      </PagePanel>
+      <PagePanel className="list" title="Payout history">
         {items.length === 0 ? <p className="help">No payouts available yet.</p> : null}
         {items.map((item) => (
-          <article key={item.id} className="card">
+          <article key={item.id} className="focus-surface p-4">
             <div className="item-head">
               <h3 className="item-title">{item.contract.requirement.title}</h3>
               <span className={`status ${item.status.toLowerCase()}`}>{item.status}</span>
@@ -59,7 +56,7 @@ export default function CreatorEarningsPage() {
             <p className="muted">Released: {item.releasedAt ? new Date(item.releasedAt).toLocaleString() : "Pending"}</p>
           </article>
         ))}
-      </div>
-    </section>
+      </PagePanel>
+    </PageScaffold>
   );
 }

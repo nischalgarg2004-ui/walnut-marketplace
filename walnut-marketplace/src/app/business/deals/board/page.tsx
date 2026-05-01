@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import Toast from "@/components/ui/Toast";
+import { PagePanel, PageScaffold } from "@/components/ui/PageScaffold";
 
 type BoardRow = {
   contractId: string;
@@ -58,61 +60,64 @@ export default function BusinessDealsBoardPage() {
   }, []);
 
   return (
-    <section className="stack">
-      <div className="card hero">
-        <h1 className="title">Deal board</h1>
-        <p className="subtitle">Operational view: one row per contract. Scroll horizontally on small screens.</p>
-      </div>
-
-      <div className="card" style={{ overflowX: "auto" }}>
+    <PageScaffold
+      eyebrow="Business"
+      title="Deal board"
+      description="Operational view with one row per contract and current execution state."
+    >
+      <PagePanel className="table-scroller">
         {loading && <p className="muted">Loading…</p>}
         {!loading && rows.length === 0 && <p className="muted">No contracts yet.</p>}
         {!loading && rows.length > 0 && (
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.9rem" }}>
+          <table className="dense-table min-w-full">
             <thead>
-              <tr style={{ textAlign: "left", borderBottom: "1px solid var(--border, #333)" }}>
-                <th style={{ padding: "0.5rem" }}>Campaign</th>
-                <th style={{ padding: "0.5rem" }}>Creator</th>
-                <th style={{ padding: "0.5rem" }}>IG</th>
-                <th style={{ padding: "0.5rem" }}>Followers</th>
-                <th style={{ padding: "0.5rem" }}>Contract</th>
-                <th style={{ padding: "0.5rem" }}>Accepted</th>
-                <th style={{ padding: "0.5rem" }}>ETA</th>
-                <th style={{ padding: "0.5rem" }}>Barter</th>
-                <th style={{ padding: "0.5rem" }}>Deliverable</th>
-                <th style={{ padding: "0.5rem" }}>Views</th>
-                <th style={{ padding: "0.5rem" }}>Last sync</th>
-                <th style={{ padding: "0.5rem" }}>Payout</th>
+              <tr className="border-b border-border text-left">
+                <th>Campaign</th>
+                <th>Creator</th>
+                <th>IG</th>
+                <th>Followers</th>
+                <th>Contract</th>
+                <th>Accepted</th>
+                <th>ETA</th>
+                <th>Barter</th>
+                <th>Deliverable</th>
+                <th>Views</th>
+                <th>Last sync</th>
+                <th>Payout</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.contractId} style={{ borderBottom: "1px solid var(--border, #222)" }}>
-                  <td style={{ padding: "0.5rem", maxWidth: "12rem" }}>{r.requirementTitle}</td>
-                  <td style={{ padding: "0.5rem" }}>{r.creatorName}</td>
-                  <td style={{ padding: "0.5rem" }}>{r.instagramUsername ?? "—"}</td>
-                  <td style={{ padding: "0.5rem" }}>{r.followerCount}</td>
-                  <td style={{ padding: "0.5rem" }}>{r.contractStatus}</td>
-                  <td style={{ padding: "0.5rem" }}>
+                <tr key={r.contractId} className="border-b border-border">
+                  <td className="max-w-48">
+                    <Link href={`/business/deals/${r.contractId}`} className="text-primary hover:underline">
+                      {r.requirementTitle}
+                    </Link>
+                  </td>
+                  <td>{r.creatorName}</td>
+                  <td>{r.instagramUsername ?? "—"}</td>
+                  <td>{r.followerCount}</td>
+                  <td>{r.contractStatus}</td>
+                  <td>
                     {r.acceptedAt ? new Date(r.acceptedAt).toLocaleDateString() : "—"}
                   </td>
-                  <td style={{ padding: "0.5rem" }}>
+                  <td>
                     {r.deliveryEtaAt ? new Date(r.deliveryEtaAt).toLocaleDateString() : "—"}
                   </td>
-                  <td style={{ padding: "0.5rem" }}>{r.barter?.status ?? "—"}</td>
-                  <td style={{ padding: "0.5rem" }}>{r.latestDeliverable?.status ?? "—"}</td>
-                  <td style={{ padding: "0.5rem" }}>{r.viewsCount ?? r.lastMetricViews ?? "—"}</td>
-                  <td style={{ padding: "0.5rem" }}>
+                  <td>{r.barter?.status ?? "—"}</td>
+                  <td>{r.latestDeliverable?.status ?? "—"}</td>
+                  <td>{r.viewsCount ?? r.lastMetricViews ?? "—"}</td>
+                  <td>
                     {r.lastMetricSync ? new Date(r.lastMetricSync).toLocaleString() : "—"}
                   </td>
-                  <td style={{ padding: "0.5rem" }}>{r.payoutStatus ?? "—"}</td>
+                  <td>{r.payoutStatus ?? "—"}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
-      </div>
+      </PagePanel>
       <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: "", type: "info" })} />
-    </section>
+    </PageScaffold>
   );
 }

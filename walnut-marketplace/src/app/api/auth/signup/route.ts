@@ -1,5 +1,5 @@
 import { hash } from "bcryptjs";
-import { UserRole } from "@prisma/client";
+import { CreatorPrimaryPersona, UserRole } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { createSessionToken, SESSION_COOKIE_NAME, sessionCookieSecure } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -14,17 +14,44 @@ export async function POST(req: NextRequest) {
     }
 
     const passwordHash = await hash(payload.password, 10);
+    const role = payload.role === "BUSINESS" ? UserRole.BUSINESS : UserRole.CREATOR;
+    if (role === UserRole.BUSINESS) {
+      if (!payload.businessName || !payload.contactName) {
+        return NextResponse.json(
+          { error: "Business name and contact person are required for business signup" },
+          { status: 400 }
+        );
+      }
+    }
     const user = await db.user.create({
       data: {
         email: payload.email,
         passwordHash,
-        role: UserRole.CREATOR,
-        creatorProfile: {
-          create: {
-            fullName: payload.fullName,
-            niches: []
-          }
-        }
+        role,
+        ...(role === UserRole.CREATOR
+          ? {
+              creatorProfile: {
+                create: {
+                  fullName: payload.fullName,
+                  niches: [],
+                  primaryPersona:
+                    payload.primaryPersona === "EDITOR_PAGE"
+                      ? CreatorPrimaryPersona.EDITOR_PAGE
+                      : CreatorPrimaryPersona.CREATOR,
+                  clippingEnabled: payload.primaryPersona === "EDITOR_PAGE"
+                }
+              }
+            }
+          : {
+              businessProfile: {
+                create: {
+                  legalName: payload.businessName!,
+                  brandName: payload.businessName!,
+                  billingEmail: payload.email,
+                  representativeFullName: payload.contactName!
+                }
+              }
+            })
       }
     });
 
@@ -34,7 +61,11 @@ export async function POST(req: NextRequest) {
       role: user.role
     });
     const response = NextResponse.json({
-      data: { userId: user.id, role: user.role, next: "/creator/connect-instagram" }
+      data: {
+        userId: user.id,
+        role: user.role,
+        next: user.role === UserRole.BUSINESS ? "/business/home" : "/creator/connect-instagram"
+      }
     });
     response.cookies.set(SESSION_COOKIE_NAME, token, {
       httpOnly: true,

@@ -1,8 +1,13 @@
+import { PagePanel, PageScaffold } from "@/components/ui/PageScaffold";
+
 export default function AdminOperationsPage() {
   return (
-    <section className="stack">
-      <div className="card">
-        <h1 className="section-title">Admin Operations API Map</h1>
+    <PageScaffold
+      eyebrow="Admin"
+      title="Operations API map"
+      description="Reference endpoints used by moderation and payout operations."
+    >
+      <PagePanel>
         <p className="section-subtitle">
           Reference endpoints used by moderation and payout operations.
         </p>
@@ -19,8 +24,11 @@ export default function AdminOperationsPage() {
           <li>
             <span className="pill">POST</span> `/api/admin/payouts/[id]/reconcile` for payout exception control
           </li>
+          <li>
+            <span className="pill">UI</span> `/admin/tools/instagram-tester` for live-domain Instagram Graph capability probe
+          </li>
         </ul>
-      </div>
-    </section>
+      </PagePanel>
+    </PageScaffold>
   );
 }

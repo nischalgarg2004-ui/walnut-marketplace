@@ -2,7 +2,14 @@ import { UserRole } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { getRequiredSessionUser, requireRole } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { decryptTokenFromStorage } from "@/lib/integrations/instagram";
+import {
+  buildTokenExpiryDate,
+  decryptTokenFromStorage,
+  encryptTokenForStorage,
+  fetchInstagramMediaViewsTotal,
+  refreshLongLivedAccessToken,
+  shouldRefreshInstagramToken
+} from "@/lib/integrations/instagram";
 import { fetchInstagramProfileForSync } from "@/lib/integrations/instagram-public-profile";
 
 /**
@@ -26,9 +33,29 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const accessToken = profile.instagramAccessTokenEncrypted
+    let accessToken = profile.instagramAccessTokenEncrypted
       ? decryptTokenFromStorage(profile.instagramAccessTokenEncrypted)
       : null;
+    let tokenRefreshed = false;
+    if (accessToken && profile.instagramTokenExpiresAt && shouldRefreshInstagramToken(profile.instagramTokenExpiresAt)) {
+      try {
+        const refreshed = await refreshLongLivedAccessToken(accessToken);
+        accessToken = refreshed.accessToken;
+        tokenRefreshed = true;
+        await db.creatorProfile.update({
+          where: { userId: user.userId },
+          data: {
+            instagramAccessTokenEncrypted: encryptTokenForStorage(refreshed.accessToken),
+            instagramTokenExpiresAt: buildTokenExpiryDate(refreshed.expiresInSeconds)
+          }
+        });
+      } catch (err) {
+        console.warn("[instagram/sync] token refresh failed", {
+          userId: user.userId,
+          error: err instanceof Error ? err.message : "unknown"
+        });
+      }
+    }
 
     let extracted;
     try {
@@ -42,6 +69,10 @@ export async function POST(req: NextRequest) {
     const hasFollowers = extracted.followersCount !== undefined;
     const hasMedia = extracted.mediaCount !== undefined;
     const hasPic = Boolean(extracted.profilePictureUrl?.trim());
+    const viewsTotal =
+      accessToken && (hasMedia || profile.postCount > 0)
+        ? await fetchInstagramMediaViewsTotal({ accessToken, pageLimit: 10, perPageLimit: 50 }).catch(() => 0)
+        : 0;
 
     if (!hasName && !hasFollowers && !hasMedia && !hasPic) {
       return NextResponse.json(
@@ -55,13 +86,20 @@ export async function POST(req: NextRequest) {
       data: {
         ...(hasFollowers ? { followerCount: extracted.followersCount! } : {}),
         ...(hasMedia ? { postCount: extracted.mediaCount! } : {}),
+        instagramViewsTotal: viewsTotal,
         ...(hasName ? { fullName: extracted.fullName!.trim() } : {}),
         ...(hasPic ? { instagramProfilePictureUrl: extracted.profilePictureUrl!.trim() } : {}),
         instagramHandle: profile.instagramUsername ?? profile.instagramHandle,
         instagramStatsSyncedAt: new Date()
       }
     });
-    return NextResponse.json({ data: updated });
+    return NextResponse.json({
+      data: updated,
+      meta: {
+        tokenRefreshed,
+        profileSync: extracted.meta
+      }
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     const status = message === "FORBIDDEN" ? 403 : message === "UNAUTHORIZED" ? 401 : 400;

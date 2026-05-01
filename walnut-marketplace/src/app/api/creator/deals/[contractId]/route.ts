@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireConnectedCreator } from "@/lib/creator-access";
+import { requireCreatorProfile } from "@/lib/creator-access";
 import { db } from "@/lib/db";
 
 type Params = { params: Promise<{ contractId: string }> };
 
 export async function GET(req: NextRequest, { params }: Params) {
   try {
-    const { creatorProfileId } = await requireConnectedCreator(req);
+    const { creatorProfileId } = await requireCreatorProfile(req);
     const { contractId } = await params;
 
     const application = await db.application.findFirst({
@@ -37,8 +37,7 @@ export async function GET(req: NextRequest, { params }: Params) {
     return NextResponse.json({ data: application });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    const status =
-      message === "FORBIDDEN" ? 403 : message === "UNAUTHORIZED" ? 401 : message === "INSTAGRAM_NOT_CONNECTED" ? 412 : 400;
+    const status = message === "FORBIDDEN" ? 403 : message === "UNAUTHORIZED" ? 401 : 400;
     return NextResponse.json({ error: message }, { status });
   }
 }

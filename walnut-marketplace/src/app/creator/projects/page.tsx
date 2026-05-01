@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PagePanel, PageScaffold } from "@/components/ui/PageScaffold";
 
 type Project = {
   id: string;
@@ -25,15 +26,11 @@ export default function CreatorProjectsPage() {
   }, []);
 
   return (
-    <section className="stack">
-      <div className="card hero">
-        <h1 className="title">Projects</h1>
-        <p className="subtitle">View ongoing and completed creator work.</p>
-      </div>
-      <div className="card list">
+    <PageScaffold eyebrow="Creator" title="Projects" description="View ongoing and completed creator work.">
+      <PagePanel className="list">
         {items.length === 0 ? <p className="help">No active projects yet.</p> : null}
         {items.map((project) => (
-          <article className="card" key={project.id}>
+          <article className="focus-surface p-4" key={project.id}>
             <div className="item-head">
               <h3 className="item-title">{project.requirement.title}</h3>
               <span className={`status ${project.status.toLowerCase()}`}>{project.status}</span>
@@ -47,7 +44,7 @@ export default function CreatorProjectsPage() {
             </p>
           </article>
         ))}
-      </div>
-    </section>
+      </PagePanel>
+    </PageScaffold>
   );
 }

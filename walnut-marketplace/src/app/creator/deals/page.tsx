@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import Toast from "@/components/ui/Toast";
+import { PagePanel, PageScaffold } from "@/components/ui/PageScaffold";
 
 type DealRow = {
   id: string;
@@ -31,12 +32,6 @@ export default function CreatorDealsPage() {
 
   useEffect(() => {
     (async () => {
-      const me = await fetch("/api/auth/me");
-      const meData = await me.json();
-      if (!me.ok || !meData.data?.instagramConnected) {
-        window.location.assign("/creator/connect-instagram");
-        return;
-      }
       const res = await fetch("/api/creator/deals");
       const json = await res.json();
       if (!res.ok) {
@@ -52,19 +47,6 @@ export default function CreatorDealsPage() {
     });
   }, []);
 
-  async function markBarterReceived(contractId: string) {
-    const res = await fetch(`/api/creator/deals/${contractId}/barter-received`, { method: "POST" });
-    const json = await res.json();
-    if (!res.ok) {
-      setToast({ message: json.error ?? "Could not update", type: "error" });
-      return;
-    }
-    setToast({ message: "Marked as received.", type: "success" });
-    const reload = await fetch("/api/creator/deals");
-    const j = await reload.json();
-    setRows(j.data ?? []);
-  }
-
   async function acceptContract(contractId: string) {
     const res = await fetch(`/api/creator/contracts/${contractId}/accept`, { method: "POST" });
     const json = await res.json();
@@ -79,18 +61,22 @@ export default function CreatorDealsPage() {
   }
 
   return (
-    <section className="stack">
-      <div className="card hero">
-        <h1 className="title">My deals</h1>
-        <p className="subtitle">Track applications, contracts, barter, and metrics in one place.</p>
-      </div>
-
-      <div className="card">
+    <PageScaffold
+      eyebrow="Creator"
+      title="My deals"
+      description="Track applications, contracts, barter, and metrics in one place."
+      actions={
+        <Link className="btn ghost" href="/creator/opportunities">
+          Discover opportunities
+        </Link>
+      }
+    >
+      <PagePanel>
         {loading && <p className="muted">Loading…</p>}
         {!loading && rows.length === 0 && <p className="muted">No applications yet.</p>}
         <div className="list">
           {rows.map((app) => (
-            <article className="card" key={app.id}>
+            <article className="focus-surface p-4" key={app.id}>
               <h3 className="item-title">{app.requirement.title}</h3>
               <p className="muted">Application: {app.status}</p>
               {app.contract ? (
@@ -109,15 +95,11 @@ export default function CreatorDealsPage() {
                       Accept contract
                     </button>
                   )}
-                  {app.contract.barterShipment && app.contract.barterShipment.status !== "RECEIVED" && (
-                    <button
-                      type="button"
-                      className="btn secondary"
-                      onClick={() => markBarterReceived(app.contract!.id)}
-                    >
-                      Confirm product received (barter)
-                    </button>
-                  )}
+                  {app.contract.barterShipment && app.contract.barterShipment.status !== "RECEIVED" ? (
+                    <p className="muted text-sm">
+                      Shipment: {app.contract.barterShipment.status}. Confirm receipt inside <strong>Open deal</strong>.
+                    </p>
+                  ) : null}
                   {app.contract.metricSnapshots?.[0] ? (
                     <p className="muted">
                       Last metric sync: {new Date(app.contract.metricSnapshots[0].capturedAt).toLocaleString()} · Views:{" "}
@@ -136,8 +118,8 @@ export default function CreatorDealsPage() {
             </article>
           ))}
         </div>
-      </div>
+      </PagePanel>
       <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: "", type: "info" })} />
-    </section>
+    </PageScaffold>
   );
 }

@@ -19,7 +19,8 @@ export async function GET(req: NextRequest) {
       where: { businessId: business.id },
       include: {
         requirement: { select: { title: true } },
-        creator: { select: { fullName: true } }
+        creator: { select: { fullName: true } },
+        performanceReport: { select: { viewsCount: true, status: true, source: true } }
       },
       orderBy: { acceptedAt: "desc" }
     });

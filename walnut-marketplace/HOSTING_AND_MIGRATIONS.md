@@ -42,6 +42,8 @@ This document is the operational reference for hosting Walnut on Vercel now and 
 ### Optional / future
 - `RAZORPAY_KEY_ID`
 - `RAZORPAY_KEY_SECRET`
+- `RESEND_API_KEY` (required for business-settings OTP email verification flow)
+- `RESEND_FROM_EMAIL` (sender identity for OTP emails)
 
 ## Vercel Deployment Notes
 
@@ -52,6 +54,14 @@ This document is the operational reference for hosting Walnut on Vercel now and 
   3. **`next build`**
 - So **preview/production** databases are migrated **during the build**, as long as `DATABASE_URL` is set in that Vercel environment. If you use a **pooled** Neon URL and migrations fail, configure `DIRECT_URL` + `directUrl` in Prisma (see Neon section above).
 - Local/manual fallback: `npm run prisma:migrate:deploy` against the same `DATABASE_URL` if you ever need to run migrations outside CI.
+
+### CLI production deploy (without waiting for Git)
+
+Git-connected projects still build on push. To ship **from your machine** with `npx vercel deploy --prod` and then sync Git, follow **[Make New Version.md](./Make%20New%20Version.md)**. Summary:
+
+- **Working directory must match Vercel “Root Directory”.** If the project is linked with Root Directory = `walnut-marketplace` (repo contains that subfolder), run the CLI from the **Git repository root** (parent of `walnut-marketplace`), not from inside the app twice-deep—otherwise paths like `…\walnut-marketplace\walnut-marketplace` break.
+- **`.vercel` link:** `.vercel/` is gitignored. It must exist in the directory **from which you run** `vercel deploy`. If you linked only inside `walnut-marketplace` but deploy from the repo root, copy `.vercel/project.json` to that root or run `vercel link` once there.
+- **Command:** `npx vercel deploy --prod --yes` (see Make New Version for PowerShell example and verification with `npx vercel inspect`).
 
 ## Prisma Rules
 
@@ -100,6 +110,29 @@ If preview data is needed later:
 6. Verify preview behavior
 7. Promote to stable only after preview validation
 
+### Current schema expansion note
+
+Recent business-side revamp adds new Prisma entities/fields:
+- `BusinessProfile` Instagram-link fields for business OAuth linking
+- `BusinessSettings` persisted settings model
+- Wallet domain models: `WalletAccount`, `WalletTransaction`, `WalletCommitment`
+
+Ensure migration files for these are applied in preview before production promotion.
+
+### Release checklist (creator insights + Graph-only rollout)
+1. Confirm Bright Data cleanup is present in the deployment diff (no `BRIGHTDATA_` envs/references).
+2. Confirm env vars in target Vercel environment:
+   - `INSTAGRAM_CLIENT_ID`
+   - `INSTAGRAM_CLIENT_SECRET`
+   - `INSTAGRAM_REDIRECT_URI`
+   - `INSTAGRAM_SCOPE`
+3. Confirm Meta app redirect URI exactly matches deployed callback URL.
+4. Deploy to preview and verify creator production insights:
+   - page: `/creator/profile` (Insights section + refresh)
+   - API: `GET/POST /api/creator/insights`
+5. Run creator insights matrix (success + controlled failures) before production promotion.
+6. Promote preview to production only after successful matrix run.
+
 ## Instagram OAuth Rollout
 
 Do not enable Instagram OAuth until the hosted domain is stable.
@@ -111,6 +144,39 @@ Once hosted:
 - Test:
   - Instagram-first signup/login
   - Email-first signup followed by Instagram connect
+  - Creator insights refresh at `/creator/profile` (deployed domain only)
+
+### Important testing note
+
+- Instagram OAuth/API behavior should be validated on hosted domains configured in Meta app settings.
+- Localhost/manual local domains are useful for UI iteration but are not authoritative for final Instagram Login capability validation.
+
+## Creator insights QA guide (hosted domains)
+
+### Preconditions
+- Use a creator account in Walnut with connected Instagram.
+- Confirm app/user grant includes required insights permission.
+
+### Smoke test
+1. Login as creator and open `/creator/profile`.
+2. Scroll to `Instagram insights` and run `Refresh insights`.
+3. Expect:
+   - account summary + latest media rows visible
+   - insights table values for selected media
+   - status badge and diagnostics (`COMPLETE` / `PARTIAL` / `NO_DATA` / `ERROR`)
+   - no fallback/provider messaging
+
+### Negative test matrix
+- **Expired token**: revoke token and rerun -> expect `TOKEN_EXPIRED_OR_INVALID`.
+- **Scope gap**: remove/deny insights scope -> expect `PERMISSION_SCOPE_GAP`.
+- **No media**: creator account without media -> expect `NO_MEDIA_FOUND`.
+- **Incompatible metric/media**: request mismatched metric -> expect `INSIGHTS_UNAVAILABLE_FOR_MEDIA`.
+
+### Exit criteria
+- Creator can refresh insights in production UI without admin-only routes.
+- Insights responses include actionable remediation hints.
+- No fallback-source messaging appears in payout/deal screens.
+- Submitted reel views refresh uses the submitted reel media-id/permalink path first.
 
 ## Current Caveats Before Production
 

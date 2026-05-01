@@ -1,97 +1,33 @@
-"use client";
-
 import Link from "next/link";
-import { FormEvent, useState } from "react";
-import PublicSiteHeader from "@/components/PublicSiteHeader";
+import PublicMarketingShell from "@/components/PublicMarketingShell";
+import { PagePanel, PageScaffold } from "@/components/ui/PageScaffold";
 
 export default function SignupPage() {
-  const [email, setEmail] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setLoading(true);
-    setMessage("");
-    const response = await fetch("/api/auth/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, fullName, password })
-    });
-    const result = await response.json();
-    if (!response.ok) {
-      setMessage(result.error ?? "Signup failed");
-      setLoading(false);
-      return;
-    }
-    window.location.assign(result.data?.next ?? "/creator/connect-instagram");
-  }
-
   return (
-    <>
-      <PublicSiteHeader />
-      <main className="main-content">
-        <section className="mx-auto max-w-lg stack">
-          <div className="card hero">
-            <h1 className="title">Create your account</h1>
-            <p className="subtitle">
-              Use Instagram-first signup or create with email and password—then connect Instagram to unlock
-              opportunities.
-            </p>
-            <a
-              className="btn secondary"
-              href={
-                email
-                  ? `/api/auth/instagram/start?mode=signup&email=${encodeURIComponent(email)}`
-                  : "/api/auth/instagram/start?mode=signup"
-              }
-            >
-              Continue with Instagram
-            </a>
-          </div>
-
-          <div className="card">
-            <form className="form-grid" onSubmit={onSubmit}>
-              <input
-                className="form-full"
-                type="text"
-                required
-                placeholder="Full name"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-              />
-              <input
-                className="form-full"
-                type="email"
-                required
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              <input
-                className="form-full"
-                type="password"
-                required
-                minLength={8}
-                placeholder="Password (min 8 characters)"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              <div className="form-full row">
-                <button className="btn primary" type="submit" disabled={loading}>
-                  {loading ? "Creating…" : "Continue"}
-                </button>
+    <PublicMarketingShell mainClassName="main-content">
+      <div className="mx-auto max-w-2xl">
+          <PageScaffold
+            eyebrow="Get Started"
+            title="Create your OnGram account"
+            description="Choose your workspace type to continue with a dedicated onboarding flow."
+          >
+            <PagePanel>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Link className="btn primary" href="/signup/creator">
+                  Creator signup
+                </Link>
+                <Link className="btn secondary" href="/signup/business">
+                  Business signup
+                </Link>
+              </div>
+              <div className="mt-4">
                 <Link className="btn ghost" href="/login">
                   Already have an account
                 </Link>
               </div>
-            </form>
-            {message ? <p className="help">{message}</p> : null}
-          </div>
-        </section>
-      </main>
-    </>
+            </PagePanel>
+          </PageScaffold>
+      </div>
+    </PublicMarketingShell>
   );
 }

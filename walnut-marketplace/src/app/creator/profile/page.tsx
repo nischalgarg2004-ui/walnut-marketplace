@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { CREATOR_NICHES } from "@/lib/creator-niches";
+import { getAllDistrictsFlat, getDistrictsForState, INDIA_STATES } from "@/lib/india-geography";
 
 type ProfileRow = {
   fullName: string;
@@ -10,13 +11,56 @@ type ProfileRow = {
   niches: string[];
   city: string | null;
   state: string | null;
+  indiaStateId: string | null;
+  indiaDistrictId: string | null;
   instagramHandle: string | null;
   instagramUsername: string | null;
   instagramConnectedAt: string | null;
   followerCount: number;
   postCount: number;
+  instagramViewsTotal?: number;
   instagramStatsSyncedAt: string | null;
   instagramProfilePictureUrl: string | null;
+  primaryPersona?: "CREATOR" | "EDITOR_PAGE" | null;
+  clippingEnabled?: boolean;
+  editorPageHandle?: string | null;
+  clippingCapabilities?: string[];
+};
+
+type CreatorInsightsRow = {
+  name: string;
+  period?: string;
+  values?: Array<{ value?: number }>;
+  title?: string;
+  description?: string;
+};
+
+type CreatorInsightsResponse = {
+  data?: {
+    account: {
+      instagramUserId: string;
+      username: string;
+      accountType: string;
+      followerCount: number;
+      postCount: number;
+    };
+    latestMedia: Array<{ id: string; permalink?: string; mediaType?: string; timestamp?: string }>;
+    selectedMediaId: string | null;
+    selectedMediaPermalink: string | null;
+    selectedMediaType: string | null;
+    insights: CreatorInsightsRow[];
+    diagnostics: {
+      requestedMetrics: string[];
+      returnedMetrics: string[];
+      unsupportedMetrics: string[];
+      classification: string;
+      status: "COMPLETE" | "PARTIAL" | "NO_DATA" | "ERROR";
+      errorMessage?: string;
+    };
+    tokenRefreshed: boolean;
+    fetchedAt: string;
+  };
+  error?: string;
 };
 
 function initialsFromName(name: string): string {
@@ -47,6 +91,17 @@ function formatGenderLabel(slug: string): string {
   return "—";
 }
 
+function stateLabelById(id: string | null | undefined): string {
+  if (!id) return "";
+  return INDIA_STATES.find((s) => s.id === id)?.name ?? "";
+}
+
+const districtFlat = getAllDistrictsFlat();
+function districtLabelById(id: string | null | undefined): string {
+  if (!id) return "";
+  return districtFlat.find((d) => d.id === id)?.name ?? "";
+}
+
 export default function CreatorProfilePage() {
   const [message, setMessage] = useState("");
   const [syncMessage, setSyncMessage] = useState("");
@@ -58,14 +113,25 @@ export default function CreatorProfilePage() {
   const [gender, setGender] = useState("");
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
+  const [indiaStateId, setIndiaStateId] = useState("");
+  const [indiaDistrictId, setIndiaDistrictId] = useState("");
   const [followerCount, setFollowerCount] = useState(0);
   const [postCount, setPostCount] = useState(0);
+  const [instagramViewsTotal, setInstagramViewsTotal] = useState(0);
   const [selectedNiches, setSelectedNiches] = useState<string[]>([]);
+  const [primaryPersona, setPrimaryPersona] = useState<"CREATOR" | "EDITOR_PAGE">("CREATOR");
+  const [clippingEnabled, setClippingEnabled] = useState(false);
+  const [editorPageHandle, setEditorPageHandle] = useState("");
+  const [clippingCapabilities, setClippingCapabilities] = useState("");
   const [nicheAddValue, setNicheAddValue] = useState("");
   const [instagramConnected, setInstagramConnected] = useState(false);
   const [instagramUsername, setInstagramUsername] = useState<string | null>(null);
   const [instagramStatsSyncedAt, setInstagramStatsSyncedAt] = useState<string | null>(null);
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
+  const [insights, setInsights] = useState<CreatorInsightsResponse["data"] | null>(null);
+  const [insightsLoading, setInsightsLoading] = useState(false);
+  const [insightsMessage, setInsightsMessage] = useState("");
+  const [selectedInsightsMediaId, setSelectedInsightsMediaId] = useState<string>("");
 
   const displayHandle = useMemo(() => {
     const h = instagramUsername ?? "";
@@ -96,9 +162,16 @@ export default function CreatorProfilePage() {
       setGender(normalizeGender(p.gender));
       setCity(p.city ?? "");
       setState(p.state ?? "");
+      setIndiaStateId(p.indiaStateId ?? "");
+      setIndiaDistrictId(p.indiaDistrictId ?? "");
       setFollowerCount(p.followerCount ?? 0);
       setPostCount(p.postCount ?? 0);
+      setInstagramViewsTotal(p.instagramViewsTotal ?? 0);
       setSelectedNiches(Array.isArray(p.niches) ? p.niches : []);
+      setPrimaryPersona(p.primaryPersona === "EDITOR_PAGE" ? "EDITOR_PAGE" : "CREATOR");
+      setClippingEnabled(Boolean(p.clippingEnabled));
+      setEditorPageHandle(p.editorPageHandle ?? "");
+      setClippingCapabilities(Array.isArray(p.clippingCapabilities) ? p.clippingCapabilities.join(", ") : "");
       const connected = Boolean(p.instagramConnectedAt);
       setInstagramConnected(connected);
       setInstagramUsername(p.instagramUsername ?? p.instagramHandle ?? null);
@@ -118,6 +191,10 @@ export default function CreatorProfilePage() {
   useEffect(() => {
     void loadProfile();
   }, [loadProfile]);
+
+  useEffect(() => {
+    void loadInsights();
+  }, []);
 
   function removeNiche(slug: string) {
     setSelectedNiches((prev) => prev.filter((s) => s !== slug));
@@ -157,9 +234,18 @@ export default function CreatorProfilePage() {
       niches: selectedNiches,
       city: city.trim() || undefined,
       state: state.trim() || undefined,
+      indiaStateId: indiaStateId || null,
+      indiaDistrictId: indiaDistrictId || null,
       followerCount,
       postCount,
-      gender: gender === "" ? null : (gender as "male" | "female" | "other")
+      gender: gender === "" ? null : (gender as "male" | "female" | "other"),
+      primaryPersona,
+      clippingEnabled,
+      editorPageHandle: editorPageHandle.trim() || undefined,
+      clippingCapabilities: clippingCapabilities
+        .split(",")
+        .map((v) => v.trim())
+        .filter(Boolean)
     };
 
     const response = await fetch("/api/profiles/creator", {
@@ -193,12 +279,35 @@ export default function CreatorProfilePage() {
       setFullName(p.fullName ?? fullName);
       setFollowerCount(p.followerCount ?? 0);
       setPostCount(p.postCount ?? 0);
+      setInstagramViewsTotal(p.instagramViewsTotal ?? 0);
       setInstagramStatsSyncedAt(p.instagramStatsSyncedAt ?? null);
       setProfilePictureUrl(p.instagramProfilePictureUrl ?? null);
       setSyncMessage("Synced from your public Instagram profile.");
       void loadProfile();
     } finally {
       setSyncing(false);
+    }
+  }
+
+  async function loadInsights(showRefreshMessage = false, mediaId?: string) {
+    setInsightsLoading(true);
+    if (showRefreshMessage) setInsightsMessage("");
+    try {
+      const url = new URL("/api/creator/insights", window.location.origin);
+      const selected = mediaId ?? selectedInsightsMediaId;
+      if (selected) url.searchParams.set("mediaId", selected);
+      const response = await fetch(url.toString());
+      const result = (await response.json()) as CreatorInsightsResponse;
+      if (!response.ok || !result.data) {
+        setInsights(null);
+        setInsightsMessage(result.error ?? "Could not fetch insights");
+        return;
+      }
+      setInsights(result.data);
+      setSelectedInsightsMediaId(result.data.selectedMediaId ?? "");
+      setInsightsMessage(showRefreshMessage ? "Insights refreshed from Instagram Graph." : "");
+    } finally {
+      setInsightsLoading(false);
     }
   }
 
@@ -252,7 +361,9 @@ export default function CreatorProfilePage() {
                       ) : null}
                     </p>
                   ) : (
-                    <p className="mt-1 text-sm text-muted-foreground">Add Instagram in settings to show a handle.</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Connect Instagram to show a handle on your public preview.
+                    </p>
                   )}
                   <div className="mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 sm:justify-start">
                     <div>
@@ -267,6 +378,14 @@ export default function CreatorProfilePage() {
                       </span>
                       <span className="ml-1.5 text-sm text-muted-foreground">posts</span>
                     </div>
+                    {instagramViewsTotal > 0 ? (
+                      <div>
+                        <span className="text-lg font-semibold tabular-nums text-foreground">
+                          {formatCompact(instagramViewsTotal)}
+                        </span>
+                        <span className="ml-1.5 text-sm text-muted-foreground">views</span>
+                      </div>
+                    ) : null}
                   </div>
                   {instagramConnected && displayHandle ? (
                     <div className="mt-5 flex flex-col items-center gap-2 sm:items-start">
@@ -327,6 +446,20 @@ export default function CreatorProfilePage() {
                     <dd className="mt-1 text-foreground">{state.trim() || "—"}</dd>
                   </div>
                   <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      India (state / UT)
+                    </dt>
+                    <dd className="mt-1 text-foreground">{stateLabelById(indiaStateId) || "—"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">District</dt>
+                    <dd className="mt-1 text-foreground">{districtLabelById(indiaDistrictId) || "—"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Primary persona</dt>
+                    <dd className="mt-1 text-foreground">{primaryPersona === "EDITOR_PAGE" ? "Editor/Page" : "Creator"}</dd>
+                  </div>
+                  <div>
                     <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Follower count</dt>
                     <dd className="mt-1 tabular-nums text-foreground">{followerCount.toLocaleString()}</dd>
                   </div>
@@ -334,6 +467,12 @@ export default function CreatorProfilePage() {
                     <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Post count</dt>
                     <dd className="mt-1 tabular-nums text-foreground">{postCount.toLocaleString()}</dd>
                   </div>
+                  {instagramViewsTotal > 0 ? (
+                    <div>
+                      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Views</dt>
+                      <dd className="mt-1 tabular-nums text-foreground">{instagramViewsTotal.toLocaleString()}</dd>
+                    </div>
+                  ) : null}
                   <div className="sm:col-span-2">
                     <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Niches</dt>
                     <dd className="mt-2">
@@ -475,6 +614,53 @@ export default function CreatorProfilePage() {
                   </select>
                 </div>
 
+                <div className="form-full rounded-lg border border-border bg-muted/30 p-4">
+                  <p className="m-0 mb-3 text-sm font-medium text-foreground">Home region (India)</p>
+                  <p className="help m-0 mb-3">
+                    Optional. Used to match barter campaigns that target specific districts. Leave empty if you prefer.
+                  </p>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-foreground" htmlFor="indiaStateId">
+                        State / UT
+                      </label>
+                      <select
+                        id="indiaStateId"
+                        value={indiaStateId}
+                        onChange={(e) => {
+                          setIndiaStateId(e.target.value);
+                          setIndiaDistrictId("");
+                        }}
+                      >
+                        <option value="">Not specified</option>
+                        {INDIA_STATES.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-foreground" htmlFor="indiaDistrictId">
+                        District
+                      </label>
+                      <select
+                        id="indiaDistrictId"
+                        value={indiaDistrictId}
+                        disabled={!indiaStateId}
+                        onChange={(e) => setIndiaDistrictId(e.target.value)}
+                      >
+                        <option value="">{indiaStateId ? "Select district…" : "Choose a state first"}</option>
+                        {getDistrictsForState(indiaStateId).map((d) => (
+                          <option key={d.id} value={d.id}>
+                            {d.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
                 <div>
                   <label className="mb-1 block text-sm font-medium text-foreground" htmlFor="city">
                     City
@@ -493,6 +679,28 @@ export default function CreatorProfilePage() {
                     onChange={(e) => setState(e.target.value)}
                     placeholder="State / UT"
                   />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-foreground">Primary profile type</label>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <label className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2">
+                      <input
+                        type="radio"
+                        checked={primaryPersona === "CREATOR"}
+                        onChange={() => setPrimaryPersona("CREATOR")}
+                      />
+                      <span>Creator (UGC)</span>
+                    </label>
+                    <label className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2">
+                      <input
+                        type="radio"
+                        checked={primaryPersona === "EDITOR_PAGE"}
+                        onChange={() => setPrimaryPersona("EDITOR_PAGE")}
+                      />
+                      <span>Editor/Page (Clipping)</span>
+                    </label>
+                  </div>
                 </div>
 
                 <div>
@@ -515,6 +723,29 @@ export default function CreatorProfilePage() {
                       ? "Synced from Instagram when you use Update from Instagram."
                       : "Enter manually if Instagram is not connected."}
                   </p>
+                </div>
+
+                <div className="form-full rounded-lg border border-border bg-muted/30 p-4">
+                  <label className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
+                    <input
+                      type="checkbox"
+                      checked={clippingEnabled}
+                      onChange={(e) => setClippingEnabled(e.target.checked)}
+                    />
+                    Enable clipping opportunities
+                  </label>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <input
+                      value={editorPageHandle}
+                      onChange={(e) => setEditorPageHandle(e.target.value)}
+                      placeholder="Editor/Page handle (optional)"
+                    />
+                    <input
+                      value={clippingCapabilities}
+                      onChange={(e) => setClippingCapabilities(e.target.value)}
+                      placeholder="Capabilities (comma separated)"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -555,6 +786,133 @@ export default function CreatorProfilePage() {
         {message ? (
           <p className="border-t border-border px-6 py-3 text-sm text-foreground sm:px-8" role="status">
             {message}
+          </p>
+        ) : null}
+      </div>
+
+      <div className="card">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="section-title m-0">Instagram insights</h2>
+          <button
+            type="button"
+            className="btn secondary"
+            disabled={insightsLoading}
+            onClick={() => void loadInsights(true)}
+          >
+            {insightsLoading ? "Refreshing…" : "Refresh insights"}
+          </button>
+        </div>
+        <p className="help m-0 mt-1">
+          Live Graph insights from your connected account. This is the primary production testing surface for creators.
+        </p>
+        {!insights ? (
+          <p className="mt-3 text-sm text-muted-foreground">
+            {insightsLoading ? "Loading insights…" : insightsMessage || "Insights unavailable. Connect Instagram and try again."}
+          </p>
+        ) : (
+          <div className="mt-4 space-y-4">
+            <div className="rounded-lg border border-border p-3">
+              <p className="m-0 text-sm font-medium text-foreground">
+                @{insights.account.username} · {insights.account.accountType}
+              </p>
+              <p className="m-0 mt-1 text-xs text-muted-foreground">
+                Followers: {insights.account.followerCount.toLocaleString()} · Posts: {insights.account.postCount.toLocaleString()}
+              </p>
+              <p className="m-0 mt-1 text-xs text-muted-foreground">
+                Last fetched: {new Date(insights.fetchedAt).toLocaleString()}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border p-3">
+              <p className="m-0 text-sm font-medium text-foreground">Insights status</p>
+              <p className="m-0 mt-1 text-xs text-muted-foreground">
+                <span className="font-semibold text-foreground">{insights.diagnostics.status}</span> ·{" "}
+                {insights.diagnostics.classification}
+              </p>
+              {insights.diagnostics.errorMessage ? (
+                <p className="m-0 mt-1 text-xs text-destructive">{insights.diagnostics.errorMessage}</p>
+              ) : null}
+              {insights.diagnostics.unsupportedMetrics.length > 0 ? (
+                <p className="m-0 mt-1 text-xs text-muted-foreground">
+                  Unsupported for selected media: {insights.diagnostics.unsupportedMetrics.join(", ")}
+                </p>
+              ) : null}
+            </div>
+            <div className="rounded-lg border border-border p-3">
+              <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted-foreground" htmlFor="insightsMediaId">
+                Selected media for insights
+              </label>
+              <select
+                id="insightsMediaId"
+                value={selectedInsightsMediaId}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  setSelectedInsightsMediaId(next);
+                  void loadInsights(true, next);
+                }}
+              >
+                {insights.latestMedia.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.mediaType ?? "MEDIA"} · {m.id.slice(0, 12)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="max-h-56 overflow-auto rounded-lg border border-border p-3">
+              <p className="m-0 text-sm font-medium text-foreground">Latest media</p>
+              {insights.latestMedia.length === 0 ? (
+                <p className="m-0 mt-2 text-xs text-muted-foreground">No media found for this account.</p>
+              ) : (
+                <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                  {insights.latestMedia.map((m) => (
+                    <li key={m.id}>
+                      {m.mediaType ?? "MEDIA"} · {m.id}
+                      {m.permalink ? (
+                        <>
+                          {" "}
+                          ·{" "}
+                          <a href={m.permalink} target="_blank" rel="noreferrer" className="underline underline-offset-2">
+                            open
+                          </a>
+                        </>
+                      ) : null}
+                      {m.timestamp ? <> · {new Date(m.timestamp).toLocaleString()}</> : null}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div className="max-h-72 overflow-auto rounded-lg border border-border p-3">
+              <p className="m-0 text-sm font-medium text-foreground">Selected media insights</p>
+              {insights.insights.length === 0 ? (
+                <p className="m-0 mt-2 text-xs text-muted-foreground">No insights returned for the selected media.</p>
+              ) : (
+                <table className="mt-2 w-full text-left text-xs">
+                  <thead>
+                    <tr className="text-muted-foreground">
+                      <th className="py-1 pr-2">Metric</th>
+                      <th className="py-1 pr-2">Value</th>
+                      <th className="py-1">Period</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {insights.insights.map((row) => (
+                      <tr key={row.name} className="border-t border-border/60">
+                        <td className="py-1 pr-2 text-foreground">{row.name}</td>
+                        <td className="py-1 pr-2 text-foreground">
+                          {typeof row.values?.[0]?.value === "number" ? row.values[0]!.value!.toLocaleString() : "—"}
+                        </td>
+                        <td className="py-1 text-muted-foreground">{row.period ?? "lifetime"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        )}
+        {insightsMessage ? (
+          <p className={`mt-3 text-sm ${insightsMessage.includes("Could not") ? "text-destructive" : "text-emerald-800"}`}>
+            {insightsMessage}
           </p>
         ) : null}
       </div>

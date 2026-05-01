@@ -10,6 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "tsx --test src/lib/integrations/instagram-reel-scrape.test.ts src/lib/integrations/instagram-token-lifecycle.test.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
@@ -28,6 +29,7 @@
     "next": "^15.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "resend": "^6.12.2",
     "tailwind-merge": "^3.5.0",
     "zod": "^3.24.2"
   },
@@ -45,6 +47,6 @@
     "tailwindcss": "^3.4.19",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2",
-    "vercel": "^51.4.0"
+    "vercel": "^51.7.0"
   }
 }

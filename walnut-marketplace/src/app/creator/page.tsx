@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import Toast from "@/components/ui/Toast";
 import { OpportunityCard } from "@/components/design-system/OpportunityCard";
+import { PagePanel, PageScaffold } from "@/components/ui/PageScaffold";
 
 type Opportunity = {
   id: string;
@@ -39,29 +40,22 @@ export default function CreatorHomePage() {
   }, []);
 
   return (
-    <section className="stack">
-      <div className="card hero">
-        <h1 className="title">Home</h1>
-        <p className="subtitle">
-          Collaborations that stay on brief—browse live opportunities, apply in minutes, and track deals in one
-          place.
-        </p>
-        <div className="row">
+    <PageScaffold
+      eyebrow="Creator"
+      title="Home"
+      description="Browse live opportunities, apply in minutes, and keep active deals moving."
+      actions={
+        <>
           <Link className="btn primary" href="/creator/opportunities">
             Browse opportunities
           </Link>
           <Link className="btn ghost" href="/creator/deals">
             My deals
           </Link>
-        </div>
-      </div>
-
-      <div>
-        <h2 className="section-title">New for you</h2>
-        <p className="section-subtitle">A snapshot of published campaigns—open the feed for filters and eligibility.</p>
-      </div>
-
-      <div className="card">
+        </>
+      }
+    >
+      <PagePanel title="New for you" description="A snapshot of published campaigns. Open opportunities for full filters and eligibility.">
         {loading && (
           <div className="list">
             <div className="skeleton skeleton-card" />
@@ -94,8 +88,8 @@ export default function CreatorHomePage() {
             </Link>
           </p>
         ) : null}
-      </div>
+      </PagePanel>
       <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: "", type: "info" })} />
-    </section>
+    </PageScaffold>
   );
 }

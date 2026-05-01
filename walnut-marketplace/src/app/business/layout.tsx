@@ -10,7 +10,7 @@ export default async function BusinessLayout({ children }: { children: React.Rea
   const user = token ? parseSessionToken(token) : null;
 
   if (!user) {
-    redirect("/login?next=/business");
+    redirect("/login/business?next=/business/home");
   }
 
   if (user.role !== UserRole.BUSINESS) {

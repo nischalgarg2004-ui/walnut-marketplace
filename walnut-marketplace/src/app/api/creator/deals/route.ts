@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireConnectedCreator } from "@/lib/creator-access";
+import { requireCreatorProfile } from "@/lib/creator-access";
 import { db } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
   try {
-    const { creatorProfileId } = await requireConnectedCreator(req);
+    const { creatorProfileId } = await requireCreatorProfile(req);
 
     const applications = await db.application.findMany({
       where: { creatorId: creatorProfileId },
@@ -28,8 +28,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ data: applications });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    const status =
-      message === "FORBIDDEN" ? 403 : message === "UNAUTHORIZED" ? 401 : message === "INSTAGRAM_NOT_CONNECTED" ? 412 : 400;
+    const status = message === "FORBIDDEN" ? 403 : message === "UNAUTHORIZED" ? 401 : 400;
     return NextResponse.json({ error: message }, { status });
   }
 }

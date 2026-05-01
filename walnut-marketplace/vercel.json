@@ -1,5 +1,7 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "npm run vercel:build",
+  "framework": "nextjs",
   "crons": [
     {
       "path": "/api/internal/metrics/sync",

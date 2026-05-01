@@ -2,17 +2,18 @@ import { ContractStatus } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requireConnectedCreator } from "@/lib/creator-access";
 import { db } from "@/lib/db";
+import { notifyUser, writeAudit } from "@/lib/activity-log";
 
 type Params = { params: Promise<{ contractId: string }> };
 
 export async function POST(req: NextRequest, { params }: Params) {
   try {
-    const { creatorProfileId } = await requireConnectedCreator(req);
+    const { user, creatorProfileId } = await requireConnectedCreator(req);
     const { contractId } = await params;
 
     const contract = await db.contract.findUnique({
       where: { id: contractId },
-      include: { requirement: { include: { compensation: true } } }
+      include: { requirement: { include: { compensation: true, business: { select: { userId: true, brandName: true } } } } }
     });
     if (!contract || contract.creatorId !== creatorProfileId) {
       return NextResponse.json({ error: "Contract not found" }, { status: 404 });
@@ -45,6 +46,19 @@ export async function POST(req: NextRequest, { params }: Params) {
         update: {}
       });
     }
+
+    await writeAudit({
+      actorUserId: user.userId,
+      entityType: "Contract",
+      entityId: contractId,
+      action: "CONTRACT_ACCEPTED"
+    });
+    await notifyUser({
+      userId: contract.requirement.business.userId,
+      type: "CONTRACT",
+      title: "Contract accepted",
+      body: `Creator accepted contract for "${contract.requirement.title}".`
+    });
 
     return NextResponse.json({ data: updated });
   } catch (error) {

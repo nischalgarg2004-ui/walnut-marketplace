@@ -241,6 +241,7 @@ async function main() {
             minFollowers: r.eligibility.minFollowers,
             minEngagementRate: r.eligibility.minEngagementRate,
             allowedLocations: r.eligibility.allowedLocations,
+            allowedDistrictIds: [],
             niches: r.eligibility.niches
           }
         },

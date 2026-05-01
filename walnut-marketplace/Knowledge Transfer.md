@@ -74,6 +74,8 @@ flowchart TD
 
 ## Repository layout (what lives where)
 
+The **Git repository** may have the Next.js app in a subfolder named `walnut-marketplace/` (repo root one level above `package.json`). Vercel **Root Directory** is often set to that subfolder—see [Make New Version.md](./Make%20New%20Version.md) for where to run `vercel deploy` from.
+
 ```mermaid
 flowchart TB
   subgraph app [src/app]
@@ -101,6 +103,7 @@ flowchart TB
 | [`src/app`](./src/app) | App Router: UI routes (`page.tsx`, `layout.tsx`) |
 | [`src/app/api`](./src/app/api) | HTTP API: one `route.ts` per verb/path segment |
 | [`src/lib`](./src/lib) | Server utilities: DB (`db.ts`), auth (`auth.ts`), payments, Instagram, validation, analytics, etc. |
+| [`src/lib/creator-niches.ts`](./src/lib/creator-niches.ts) | Curated niche list (50 slugs) for creator profiles; eligibility matching uses the same string slugs in seed data |
 | [`src/middleware.ts`](./src/middleware.ts) | Edge middleware: session cookie presence for protected path prefixes |
 | [`prisma/`](./prisma) | `schema.prisma`, migrations |
 | [`scripts/vercel-build.mjs`](./scripts/vercel-build.mjs) | Vercel build: `migrate deploy` (when `VERCEL=1`), `generate`, `next build` |
@@ -115,7 +118,7 @@ Roles are modeled in Prisma as `UserRole`: `CREATOR`, `BUSINESS`, `ADMIN`.
 |---------|----------------|-------|
 | **Public** | `/`, `/login`, `/signup` | Not in middleware matcher |
 | **Creator** | `/creator`, `/creator/opportunities`, `/creator/deals`, `/creator/profile`, … | Cookie required (middleware) |
-| **Business** | `/business`, `/business/requirements`, `/business/applications`, `/business/deals/board`, … | Cookie required |
+| **Business** | `/business`, `/business/requirements`, `/business/applications`, `/business/deals/board`, … | Cookie required; applications list shows follower count (not engagement %) |
 | **Admin** | `/admin`, `/admin/operations` | Cookie required |
 
 ---
@@ -128,6 +131,8 @@ Handlers live under [`src/app/api`](./src/app/api). Grouped by URL prefix (not e
 |--------|---------|
 | `/api/auth/*` | Login, signup, logout, session (`me`), password, Instagram OAuth start/callback |
 | `/api/creator/*` | Applications, deals, earnings, opportunities, projects, profiles |
+| `/api/profiles/creator` | GET/PUT creator profile (niches 1–5, gender `male`/`female`/`other`, etc.) |
+| `/api/profiles/creator/sync-instagram` | POST: refresh display name, follower/post counts, profile photo (hybrid Graph + public web—see below) |
 | `/api/business/*` | Applications, contracts, deals board, deliverables, payouts, profiles |
 | `/api/admin/*` | Flags, metrics, moderation, payout reconciliation |
 | `/api/applications`, `/api/requirements`, `/api/deliverables` | Cross-cutting marketplace entities |
@@ -150,6 +155,10 @@ Core **models** in [`prisma/schema.prisma`](./prisma/schema.prisma) include:
 - **Compliance & ops:** `ConsentRecord`, `Notification`, `AuditLog`, `AdminFlag`
 
 Enums define statuses for requirements, applications, contracts, deliverables, payouts, etc.
+
+**Creator profile (not exhaustive):** `CreatorProfile` stores Instagram linkage (`instagramUserId`, `instagramUsername`, encrypted token), **`followerCount`**, **`postCount`**, **`instagramStatsSyncedAt`**, **`instagramProfilePictureUrl`**, niches as string slugs (1–5 from the curated list), and **`gender`** as plain strings (`male`, `female`, `other`). **`avgEngagement`** remains on the model for **eligibility** logic with opportunities; it is not edited on the creator profile UI.
+
+**Creator profile UI** ([`src/app/creator/profile/page.tsx`](./src/app/creator/profile/page.tsx)): default **view** mode with an **Edit profile** action; **Save profile** appears only in edit mode. Gender is a dropdown; niches are chosen via a dropdown that adds up to five removable chips.
 
 ---
 
@@ -176,6 +185,8 @@ flowchart LR
 
 Details and env requirements: [HOSTING_AND_MIGRATIONS.md](./HOSTING_AND_MIGRATIONS.md).
 
+**CLI production deploy** (when not relying on Git integration alone): run from the **repository root** that matches your Vercel project’s Root Directory—see [Make New Version.md](./Make%20New%20Version.md) so the CLI does not build the wrong folder.
+
 ---
 
 ## Cross-cutting concerns (pointers)
@@ -184,7 +195,9 @@ Details and env requirements: [HOSTING_AND_MIGRATIONS.md](./HOSTING_AND_MIGRATIO
 |---------|----------------|
 | Sessions / cookies | [`src/lib/auth.ts`](./src/lib/auth.ts), middleware |
 | Database access | [`src/lib/db.ts`](./src/lib/db.ts) |
-| Instagram | [`src/lib/integrations/instagram.ts`](./src/lib/integrations/instagram.ts), `/api/auth/instagram/*` |
+| Instagram OAuth & Graph | [`src/lib/integrations/instagram.ts`](./src/lib/integrations/instagram.ts) — OAuth, `fetchInstagramIdentity`, `fetchInstagramGraphMeFields` (`/me` for name, counts, optional profile picture) |
+| Instagram public / hybrid sync | [`src/lib/integrations/instagram-public-profile.ts`](./src/lib/integrations/instagram-public-profile.ts) — `fetchInstagramProfileForSync` merges **Graph** (when a stored OAuth token exists) with **public web** fallbacks (`web_profile_info`, HTML / `__NEXT_DATA__` parsing) for anything Graph omits or when datacenter blocks occur |
+| Instagram routes | `/api/auth/instagram/start`, `/api/auth/instagram/callback`, `/api/profiles/creator/sync-instagram` |
 | Payments / Razorpay | [`src/lib/payments/`](./src/lib/payments/), `/api/webhooks/razorpay` |
 | Internal cron auth | [`src/lib/internal-auth.ts`](./src/lib/internal-auth.ts), `/api/internal/metrics/sync` |
 
@@ -197,6 +210,7 @@ This file should stay **accurate**, not exhaustive. Prefer updating it when beha
 ### When to update
 
 - New **top-level route segment** under `src/app` or large new **API namespace** under `src/app/api`
+- **Creator profile**, **Instagram sync**, or **niche** model changes
 - Changes to **middleware** matchers or session cookie behavior
 - New **environment variables** or hosting steps (link to `HOSTING_AND_MIGRATIONS.md` instead of copying long lists)
 - **Prisma** schema or migration workflow changes that affect deploy or runtime
@@ -218,4 +232,4 @@ This file should stay **accurate**, not exhaustive. Prefer updating it when beha
 
 ---
 
-**Last reviewed:** 2026-04-18
+**Last reviewed:** 2026-04-18 (creator profile UX, hybrid Instagram sync, Vercel root-directory note)

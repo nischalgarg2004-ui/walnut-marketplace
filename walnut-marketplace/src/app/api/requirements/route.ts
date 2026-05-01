@@ -2,7 +2,7 @@ import { UserRole } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { getRequiredSessionUser, requireRole } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { requirementSchema } from "@/lib/validation";
+import { normalizeRequirementPayload, requirementSchema } from "@/lib/validation";
 
 export async function GET() {
   const requirements = await db.requirement.findMany({
@@ -21,7 +21,8 @@ export async function POST(req: NextRequest) {
     const user = getRequiredSessionUser(req);
     requireRole(user, [UserRole.BUSINESS, UserRole.ADMIN]);
     const body = await req.json();
-    const payload = requirementSchema.parse(body);
+    const parsed = requirementSchema.parse(body);
+    const payload = normalizeRequirementPayload(parsed);
 
     const business = await db.businessProfile.findUnique({
       where: { userId: user.userId }
@@ -35,8 +36,13 @@ export async function POST(req: NextRequest) {
         brief: payload.brief,
         platforms: payload.platforms,
         contentType: payload.contentType,
-        deliverableCount: payload.deliverableCount,
+        category: payload.category,
+        clippingMeta: payload.clippingMeta ? (payload.clippingMeta as object) : undefined,
+        deliverableCount: payload.deliverableCount ?? 1,
         deliverableKind: payload.deliverableKind ?? undefined,
+        deliverableSlots: payload.deliverableSlots
+          ? (payload.deliverableSlots as object)
+          : undefined,
         applicationDeadline: payload.applicationDeadline
           ? new Date(payload.applicationDeadline)
           : null,
@@ -44,9 +50,19 @@ export async function POST(req: NextRequest) {
         deliveryDueOffsetDays: payload.deliveryDueOffsetDays ?? null,
         startDate: payload.startDate ? new Date(payload.startDate) : null,
         endDate: payload.endDate ? new Date(payload.endDate) : null,
+        postText: payload.postText,
+        postImageUrl: payload.postImageUrl ?? null,
+        postPublishedAt: payload.status === "PUBLISHED" ? new Date() : null,
         status: payload.status,
         eligibility: {
-          create: payload.eligibility
+          create: {
+            genderAllowed: payload.eligibility.genderAllowed,
+            minFollowers: payload.eligibility.minFollowers,
+            minEngagementRate: payload.eligibility.minEngagementRate ?? null,
+            allowedLocations: payload.eligibility.allowedLocations,
+            allowedDistrictIds: payload.eligibility.allowedDistrictIds,
+            niches: payload.eligibility.niches
+          }
         },
         compensation: {
           create: payload.compensation

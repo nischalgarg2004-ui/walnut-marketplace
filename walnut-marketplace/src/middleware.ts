@@ -12,7 +12,13 @@ export function middleware(req: NextRequest) {
   }
 
   const url = req.nextUrl.clone();
-  url.pathname = "/login";
+  if (req.nextUrl.pathname.startsWith("/business")) {
+    url.pathname = "/login/business";
+  } else if (req.nextUrl.pathname.startsWith("/creator")) {
+    url.pathname = "/login/creator";
+  } else {
+    url.pathname = "/login";
+  }
   url.searchParams.set("next", req.nextUrl.pathname);
   return NextResponse.redirect(url);
 }

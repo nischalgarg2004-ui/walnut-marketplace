@@ -68,7 +68,7 @@ function postLoginRedirectPath(role: UserRole, nextParam: string | undefined): s
 
     case UserRole.BUSINESS:
 
-      return "/business";
+      return "/business/home";
 
     default:
 
