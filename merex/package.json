@@ -1,0 +1,58 @@
+{
+  "name": "merex",
+  "version": "0.1.0",
+  "private": true,
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "tsx --test src/lib/integrations/instagram-reel-scrape.test.ts src/lib/integrations/instagram-token-lifecycle.test.ts",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:seed": "tsx prisma/seed.ts",
+    "admin:upsert": "tsx scripts/upsert-admin-user.ts",
+    "seed:opportunities": "tsx scripts/seed-live-opportunities.ts",
+    "seed:meta-review": "tsx scripts/seed-meta-review-demo.ts",
+    "vercel:build": "node scripts/vercel-build.mjs",
+    "local:setup": "powershell -ExecutionPolicy Bypass -File scripts/local-setup.ps1",
+    "local:run": "powershell -ExecutionPolicy Bypass -File scripts/local-run.ps1",
+    "local:stop": "powershell -ExecutionPolicy Bypass -File scripts/local-stop.ps1"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.6.0",
+    "bcryptjs": "^3.0.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.40.0",
+    "next": "^15.2.0",
+    "razorpay": "^2.9.6",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "resend": "^6.12.2",
+    "tailwind-merge": "^3.5.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.13.14",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "autoprefixer": "^10.5.0",
+    "dotenv": "^17.4.2",
+    "eslint": "^9.22.0",
+    "eslint-config-next": "^15.2.0",
+    "pdf-parse": "^1.1.1",
+    "postcss": "^8.5.10",
+    "prisma": "^6.6.0",
+    "puppeteer": "^25.1.0",
+    "tailwindcss": "^3.4.19",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "vercel": "^51.7.0"
+  }
+}

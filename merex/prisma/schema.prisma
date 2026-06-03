@@ -1,0 +1,579 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserRole {
+  CREATOR
+  BUSINESS
+  ADMIN
+}
+
+enum RequirementStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+}
+
+enum RequirementCategory {
+  UGC
+  CLIPPING
+}
+
+enum ApplicationStatus {
+  APPLIED
+  WAITLISTED
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
+enum ContractStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+  DISPUTED
+}
+
+enum DeliverableStatus {
+  PENDING
+  SUBMITTED
+  REVISION_REQUESTED
+  APPROVED
+  REJECTED
+  UNDER_REVIEW
+  PUBLISHED
+}
+
+enum DeliverableSubmissionStage {
+  DRAFT
+  PUBLISHED_LINK
+}
+
+enum DeliverableSubmissionStatus {
+  SUBMITTED
+  REVISION_REQUESTED
+  APPROVED
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+}
+
+enum WalletTransactionType {
+  ADD_FUNDS
+  ALLOCATION
+  RELEASE
+  REFUND
+  ADJUSTMENT
+}
+
+enum WalletTransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum InstagramAccountType {
+  CREATOR
+  BUSINESS
+}
+
+enum RequirementDeliverableKind {
+  STORY
+  REEL
+  POST
+  MIXED
+}
+
+enum ContentSource {
+  CREATOR_URL
+  INSTAGRAM_MEDIA
+  UPLOADED_FILE
+}
+
+enum BarterShipmentStatus {
+  PENDING
+  SHIPPED
+  RECEIVED
+}
+
+enum RequirementReactionType {
+  LIKE
+}
+
+enum CreatorPrimaryPersona {
+  CREATOR
+  EDITOR_PAGE
+}
+
+enum ClippingLifecycleStatus {
+  SOURCE_RECEIVED
+  SAMPLE_SUBMITTED
+  REVISION_REQUESTED
+  APPROVED_FOR_PUBLISH
+  PUBLISHED_ON_EDITOR_IG
+  VERIFIED
+  PAID
+}
+
+model User {
+  id              String            @id @default(cuid())
+  email           String            @unique
+  passwordHash    String?
+  phone           String?
+  role            UserRole
+  status          String            @default("ACTIVE")
+  createdAt       DateTime          @default(now())
+  creatorProfile  CreatorProfile?
+  businessProfile BusinessProfile?
+  notifications   Notification[]
+  auditLogs       AuditLog[]
+  consentRecords  ConsentRecord[]
+  businessSettings BusinessSettings?
+  requirementReactions RequirementReaction[]
+  requirementComments  RequirementComment[]
+  requirementShares    RequirementShareEvent[]
+}
+
+model CreatorProfile {
+  id                            String               @id @default(cuid())
+  userId                        String               @unique
+  fullName                      String
+  bio                           String?
+  gender                        String?
+  niches                        String[]
+  city                          String?
+  state                         String?
+  instagramHandle               String?
+  instagramUserId               String?              @unique
+  instagramUsername             String?
+  instagramAccountType          InstagramAccountType?
+  instagramConnectedAt          DateTime?
+  instagramAccessTokenEncrypted String?
+  instagramTokenExpiresAt       DateTime?
+  followerCount                 Int                  @default(0)
+  postCount                     Int                  @default(0)
+  instagramViewsTotal           Int                  @default(0)
+  avgEngagement                 Float                @default(0)
+  instagramStatsSyncedAt        DateTime?
+  instagramProfilePictureUrl      String?
+  kycStatus                     String               @default("PENDING")
+  indiaStateId                  String?
+  indiaDistrictId               String?
+  primaryPersona                CreatorPrimaryPersona @default(CREATOR)
+  clippingEnabled               Boolean               @default(false)
+  editorPageHandle              String?
+  clippingCapabilities          String[]              @default([])
+  user                          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applications                  Application[]
+  contracts                     Contract[]
+}
+
+model BusinessProfile {
+  id                        String        @id @default(cuid())
+  userId                    String        @unique
+  legalName                 String
+  brandName                 String
+  gstinPlaceholder          String?
+  website                   String?
+  category                  String?
+  billingEmail              String?
+  representativeFullName    String?
+  representativeDateOfBirth DateTime?     @db.Date
+  verificationStatus        String        @default("PENDING")
+  instagramUserId               String?              @unique
+  instagramUsername             String?
+  instagramAccountType          InstagramAccountType?
+  instagramConnectedAt          DateTime?
+  instagramAccessTokenEncrypted String?
+  instagramTokenExpiresAt       DateTime?
+  walletAccount             WalletAccount?
+  user                      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  requirements              Requirement[]
+  contracts                 Contract[]
+}
+
+model BusinessSettings {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  accountData   Json?
+  teamData      Json?
+  notificationData Json?
+  billingData   Json?
+  securityData  Json?
+  integrationData Json?
+  preferenceData Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model WalletAccount {
+  id              String              @id @default(cuid())
+  businessId       String             @unique
+  availableBalance Decimal            @db.Decimal(12, 2) @default(0)
+  reservedBalance  Decimal            @db.Decimal(12, 2) @default(0)
+  currency         String             @default("INR")
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  business         BusinessProfile    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  transactions     WalletTransaction[]
+  commitments      WalletCommitment[]
+}
+
+model WalletTransaction {
+  id            String                  @id @default(cuid())
+  walletId       String
+  type          WalletTransactionType
+  status        WalletTransactionStatus @default(COMPLETED)
+  amount        Decimal                 @db.Decimal(12, 2)
+  description   String?
+  reference     String?
+  metadata      Json?
+  createdAt     DateTime                @default(now())
+  wallet        WalletAccount           @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId, createdAt])
+}
+
+model WalletCommitment {
+  id           String   @id @default(cuid())
+  walletId      String
+  contractId    String?
+  requirementId String?
+  amount       Decimal  @db.Decimal(12, 2)
+  status       String   @default("ACTIVE")
+  note         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  wallet       WalletAccount @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId, status])
+}
+
+model Requirement {
+  id                    String                      @id @default(cuid())
+  businessId            String
+  title                 String
+  brief                 String
+  platforms             String[]
+  contentType           String
+  category              RequirementCategory         @default(UGC)
+  clippingMeta          Json?
+  deliverableCount      Int                         @default(1)
+  deliverableKind       RequirementDeliverableKind?
+  deliverableSlots      Json?
+  applicationDeadline   DateTime?
+  deliveryDueAt         DateTime?
+  deliveryDueOffsetDays Int?
+  startDate             DateTime?
+  endDate               DateTime?
+  status                RequirementStatus           @default(DRAFT)
+  postText              String?
+  postImageUrl          String?
+  postPublishedAt       DateTime?
+  business              BusinessProfile             @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  eligibility           RequirementEligibility?
+  compensation          CompensationModel?
+  applications          Application[]
+  contracts             Contract[]
+  reactions             RequirementReaction[]
+  comments              RequirementComment[]
+  shareEvents           RequirementShareEvent[]
+  createdAt             DateTime                    @default(now())
+}
+
+model RequirementReaction {
+  id            String                 @id @default(cuid())
+  requirementId String
+  userId        String
+  type          RequirementReactionType @default(LIKE)
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  requirement   Requirement            @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  user          User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([requirementId, userId])
+  @@index([requirementId, createdAt])
+  @@index([userId, createdAt])
+}
+
+model RequirementComment {
+  id            String      @id @default(cuid())
+  requirementId String
+  userId        String
+  body          String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  requirement   Requirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([requirementId, createdAt])
+  @@index([userId, createdAt])
+}
+
+model RequirementShareEvent {
+  id            String      @id @default(cuid())
+  requirementId String
+  userId        String
+  channel       String?
+  createdAt     DateTime    @default(now())
+  requirement   Requirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([requirementId, createdAt])
+  @@index([userId, createdAt])
+}
+
+model RequirementEligibility {
+  id                String      @id @default(cuid())
+  requirementId   String      @unique
+  genderAllowed     String[]
+  minFollowers      Int         @default(0)
+  minEngagementRate Float?
+  allowedLocations    String[]
+  allowedDistrictIds  String[]    @default([])
+  niches              String[]
+  requirement         Requirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+}
+
+model CompensationModel {
+  id                String      @id @default(cuid())
+  requirementId   String      @unique
+  hasBarter         Boolean     @default(false)
+  barterNotes       String?
+  fixedFeeAmount    Decimal?    @db.Decimal(12, 2)
+  cpvRatePer1000    Decimal?    @db.Decimal(12, 2)
+  currency          String      @default("INR")
+  requirement       Requirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+}
+
+model Application {
+  id                   String            @id @default(cuid())
+  requirementId      String
+  creatorId            String
+  pitch                String?
+  status               ApplicationStatus @default(APPLIED)
+  appliedAt            DateTime          @default(now())
+  decisionAt           DateTime?
+  decisionReason       String?
+  termsVersion         String?
+  termsAcceptedAt      DateTime?
+  barterConsentAt      DateTime?
+  barterConsentVersion String?
+  shippingFullName     String?
+  shippingPhone        String?
+  shippingLine1        String?
+  shippingLine2        String?
+  shippingCity         String?
+  shippingState        String?
+  shippingPincode      String?
+  addressSharedWithBrandAt DateTime?
+  clippingLifecycleStatus ClippingLifecycleStatus?
+  clippingDestinationHandle String?
+  clippingSampleUrl      String?
+  clippingFinalUrl       String?
+  clippingVerifiedAt     DateTime?
+  requirement          Requirement       @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  creator              CreatorProfile    @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  contract             Contract?
+}
+
+model Contract {
+  id                  String            @id @default(cuid())
+  requirementId       String
+  creatorId           String
+  businessId          String
+  applicationId       String            @unique
+  termsSnapshotJson   Json
+  status              ContractStatus    @default(PENDING)
+  acceptedAt          DateTime?
+  closedAt            DateTime?
+  cancellationReason  String?
+  deliveryEtaAt       DateTime?
+  requirement         Requirement       @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  creator             CreatorProfile    @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  business          BusinessProfile   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  application         Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  deliverables        Deliverable[]
+  performanceReport   PerformanceReport?
+  metricSnapshots     MetricSnapshot[]
+  payouts             Payout[]
+  barterShipment      BarterShipment?
+}
+
+model Deliverable {
+  id               String                     @id @default(cuid())
+  contractId       String
+  creatorId        String
+  fileUrl          String                     @default("")
+  fileType         String
+  contentSource    ContentSource              @default(UPLOADED_FILE)
+  externalUrl      String?
+  instagramMediaId String?
+  submittedAt      DateTime?
+  status           DeliverableStatus          @default(PENDING)
+  feedback         String?
+  expectedKind     RequirementDeliverableKind?
+  slotIndex        Int?
+  contract         Contract                   @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  submissions      DeliverableSubmission[]
+}
+
+model DeliverableSubmission {
+  id            String                     @id @default(cuid())
+  deliverableId String
+  stage         DeliverableSubmissionStage
+  status        DeliverableSubmissionStatus
+  url           String
+  fileType      String?
+  feedback      String?
+  submittedBy   UserRole
+  submittedAt   DateTime                   @default(now())
+  reviewedAt    DateTime?
+  deliverable   Deliverable                @relation(fields: [deliverableId], references: [id], onDelete: Cascade)
+
+  @@index([deliverableId, stage, submittedAt])
+}
+
+model PerformanceReport {
+  id          String   @id @default(cuid())
+  contractId String   @unique
+  creatorId   String
+  source      String
+  viewsCount  Int      @default(0)
+  submittedAt DateTime @default(now())
+  verifiedAt  DateTime?
+  status      String   @default("PENDING")
+  contract    Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+}
+
+model MetricSnapshot {
+  id         String   @id @default(cuid())
+  contractId String
+  capturedAt DateTime @default(now())
+  source     String
+  views      Int      @default(0)
+  rawJson    Json?
+  contract   Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@index([contractId, capturedAt])
+}
+
+model BarterShipment {
+  id                String               @id @default(cuid())
+  contractId        String               @unique
+  status            BarterShipmentStatus @default(PENDING)
+  trackingHint      String?
+  shippedAt         DateTime?
+  receivedAt        DateTime?
+  acknowledgedByUserId String?
+  contract          Contract             @relation(fields: [contractId], references: [id], onDelete: Cascade)
+}
+
+model ConsentRecord {
+  id          String   @id @default(cuid())
+  userId      String
+  kind        String
+  entityType  String
+  entityId    String
+  payloadHash String?
+  ip          String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, entityType, entityId])
+}
+
+model Payout {
+  id                   String       @id @default(cuid())
+  contractId           String
+  fixedComponentAmount Decimal?     @db.Decimal(12, 2)
+  cpvComponentAmount   Decimal?     @db.Decimal(12, 2)
+  grossAmount          Decimal      @db.Decimal(12, 2)
+  commissionAmount     Decimal      @db.Decimal(12, 2)
+  netAmount            Decimal      @db.Decimal(12, 2)
+  payoutProvider       String
+  payoutRef            String?
+  status               PayoutStatus @default(PENDING)
+  releasedAt           DateTime?
+  contract             Contract     @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  invoice              Invoice?
+}
+
+model Invoice {
+  id                   String   @id @default(cuid())
+  payoutId             String   @unique
+  invoiceNo            String   @unique
+  gstAmountPlaceholder Decimal? @db.Decimal(12, 2)
+  tdsAmountPlaceholder Decimal? @db.Decimal(12, 2)
+  issuedAt             DateTime @default(now())
+  payout               Payout   @relation(fields: [payoutId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  body      String
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String
+  entityType  String
+  entityId    String
+  action      String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  actor       User     @relation(fields: [actorUserId], references: [id], onDelete: Cascade)
+}
+
+model AdminFlag {
+  id              String   @id @default(cuid())
+  entityType      String
+  entityId        String
+  reason          String
+  status          String   @default("OPEN")
+  assignedAdminId String?
+  createdAt       DateTime @default(now())
+}
+
+/// Tracks Meta / Instagram-initiated deauthorization and data-deletion
+/// requests. Required by Meta App Review (Deauthorize Callback URL and
+/// Data Deletion Request URL). One row is created per inbound webhook call.
+model MetaPlatformRequest {
+  id               String    @id @default(cuid())
+  /// Stable opaque code returned to Meta and shown on the public status page.
+  confirmationCode String    @unique
+  /// "DEAUTHORIZE" | "DATA_DELETION"
+  kind             String
+  /// Instagram (Meta) user id extracted from the verified signed_request.
+  instagramUserId  String
+  /// Linked internal user id, if we resolved one at intake time.
+  userId           String?
+  /// "RECEIVED" | "COMPLETED" | "FAILED" | "NO_MATCH"
+  status           String    @default("RECEIVED")
+  notes            String?
+  receivedAt       DateTime  @default(now())
+  completedAt      DateTime?
+
+  @@index([instagramUserId])
+  @@index([kind, status])
+}
+

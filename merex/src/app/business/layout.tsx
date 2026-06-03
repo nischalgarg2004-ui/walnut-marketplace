@@ -1,0 +1,28 @@
+import { UserRole } from "@prisma/client";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { BusinessAppShell } from "@/components/shell/BusinessAppShell";
+import { parseSessionToken, SESSION_COOKIE_NAME } from "@/lib/auth";
+import { isUserAccountActive } from "@/lib/user-account-status";
+
+export default async function BusinessLayout({ children }: { children: React.ReactNode }) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+  const user = token ? parseSessionToken(token) : null;
+
+  if (!user) {
+    redirect("/login/business?next=/business/home");
+  }
+
+  if (!(await isUserAccountActive(user.userId))) {
+    redirect("/login/business?error=account_suspended");
+  }
+
+  if (user.role !== UserRole.BUSINESS) {
+    if (user.role === UserRole.CREATOR) redirect("/creator");
+    if (user.role === UserRole.ADMIN) redirect("/admin");
+    redirect("/login");
+  }
+
+  return <BusinessAppShell userEmail={user.email}>{children}</BusinessAppShell>;
+}

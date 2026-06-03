@@ -1,0 +1,560 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Design tokens — Part B1/B2. Dark mode: add .dark with same keys inverted.
+*/
+@layer base {
+  :root {
+    --background: 220 23% 97%;
+    --foreground: 224 34% 12%;
+    --muted: 220 20% 94%;
+    --muted-foreground: 219 16% 42%;
+    --card: 0 0% 100%;
+    --border: 220 16% 88%;
+    --input: 220 16% 88%;
+    --ring: 220 70% 46%;
+    --primary: 220 69% 42%;
+    --primary-foreground: 0 0% 100%;
+    --accent: 220 24% 92%;
+    --accent-foreground: 224 34% 12%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 26 83% 14%;
+    --sidebar: 222 47% 11%;
+    --sidebar-foreground: 210 20% 98%;
+    --sidebar-accent: 217 33% 17%;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 14px;
+  }
+
+  /* Derived dark palette from light: deeper canvas, slightly brighter borders for hierarchy */
+  .dark {
+    --background: 225 28% 7%;
+    --foreground: 220 18% 93%;
+    --muted: 223 18% 15%;
+    --muted-foreground: 218 13% 68%;
+    --card: 223 22% 11%;
+    --border: 220 16% 20%;
+    --input: 220 14% 22%;
+    --ring: 220 66% 58%;
+    --primary: 220 62% 56%;
+    --primary-foreground: 0 0% 100%;
+    --accent: 222 16% 20%;
+    --accent-foreground: 220 18% 92%;
+    --destructive: 0 72% 56%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 142 68% 42%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 56%;
+    --warning-foreground: 26 83% 12%;
+    --sidebar: 225 26% 8%;
+    --sidebar-foreground: 220 18% 92%;
+    --sidebar-accent: 220 18% 18%;
+  }
+
+  *,
+  *::before,
+  *::after {
+    @apply border-border;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply min-h-[100dvh] bg-background text-foreground antialiased;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.02em;
+  }
+
+  a {
+    @apply text-inherit no-underline;
+  }
+
+  input,
+  textarea,
+  select {
+    @apply w-full rounded-md border border-input bg-card px-3 py-2.5 text-foreground shadow-sm transition-colors;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    @apply outline-none ring-2 ring-ring/30 ring-offset-2 ring-offset-background;
+  }
+
+  textarea {
+    @apply min-h-24 resize-y;
+  }
+}
+
+/* Motion — Part B2: respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .landing-motion-stack > .landing-section {
+    opacity: 1 !important;
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+@keyframes landing-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@layer components {
+  /* Legacy layout helpers — migrate pages to Tailwind utilities over time */
+  .app-shell {
+    @apply min-h-[100dvh];
+  }
+
+  .main-content {
+    @apply mx-auto max-w-7xl px-4 pb-12 pt-8 sm:px-6 md:px-8;
+  }
+
+  .stack {
+    @apply flex flex-col gap-3.5;
+  }
+
+  .card {
+    @apply rounded-lg border border-border bg-card p-5 shadow-sm;
+  }
+
+  .hero {
+    @apply rounded-xl border border-border bg-card bg-gradient-to-br from-accent/45 via-card to-card p-7 shadow-sm;
+  }
+
+  .title {
+    @apply m-0 mb-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl;
+  }
+
+  .subtitle {
+    @apply m-0 text-muted-foreground leading-relaxed;
+  }
+
+  .section-title {
+    @apply m-0 mb-3 text-lg font-semibold text-foreground;
+  }
+
+  .section-subtitle {
+    @apply mb-3.5 mt-0 text-sm leading-relaxed text-muted-foreground sm:text-base;
+  }
+
+  .layout-grid {
+    display: grid;
+    gap: 0.875rem;
+  }
+
+  .layout-grid.two {
+    @apply md:grid-cols-2;
+  }
+
+  .layout-grid.three {
+    @apply sm:grid-cols-2 lg:grid-cols-3;
+  }
+
+  .stat {
+    @apply rounded-lg border border-border bg-muted/45 p-4;
+  }
+
+  .stat-label {
+    @apply mb-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground;
+  }
+
+  .stat-value {
+    @apply m-0 text-xl font-bold text-foreground;
+  }
+
+  .row {
+    @apply flex flex-wrap items-center gap-2.5;
+  }
+
+  .toolbar {
+    @apply mb-3 flex flex-wrap items-center gap-2.5;
+  }
+
+  .pill {
+    @apply inline-flex items-center rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground;
+  }
+
+  .muted {
+    @apply text-muted-foreground;
+  }
+
+  .empty {
+    @apply rounded-xl border border-dashed border-border px-5 py-6 text-center text-muted-foreground;
+  }
+
+  .empty-visual {
+    @apply mx-auto mb-2 h-9 w-9 rounded-lg border border-border bg-accent;
+  }
+
+  .btn {
+    @apply inline-flex min-h-touch min-w-0 cursor-pointer items-center justify-center rounded-md px-3.5 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .btn.primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90;
+  }
+
+  .btn.secondary {
+    @apply bg-accent text-accent-foreground hover:bg-accent/80;
+  }
+
+  .btn.ghost {
+    @apply border border-border bg-card text-foreground hover:bg-muted/80;
+  }
+
+  .btn.danger {
+    @apply bg-destructive/10 text-destructive hover:bg-destructive/20;
+  }
+
+  .form-grid {
+    @apply grid grid-cols-1 gap-3 md:grid-cols-2;
+  }
+
+  .form-full {
+    @apply md:col-span-2;
+  }
+
+  .help {
+    @apply m-0 text-sm text-muted-foreground;
+  }
+
+  .list {
+    @apply flex flex-col gap-3;
+  }
+
+  .item-head {
+    @apply flex items-center justify-between gap-2;
+  }
+
+  .item-title {
+    @apply m-0 text-lg font-semibold text-foreground;
+  }
+
+  .skeleton {
+    @apply animate-pulse rounded-md bg-muted;
+  }
+
+  .skeleton-line {
+    @apply mb-2 h-3;
+  }
+
+  .skeleton-card {
+    @apply h-24 rounded-xl;
+  }
+
+  .toast {
+    @apply fixed bottom-4 right-4 z-toast flex min-w-[260px] max-w-sm items-center justify-between gap-2.5 rounded-xl border border-border bg-card px-3 py-3 shadow-lg;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+    right: max(1rem, env(safe-area-inset-right));
+  }
+
+  .toast.success {
+    @apply border-emerald-200 bg-emerald-50 text-emerald-950;
+  }
+
+  .toast.error {
+    @apply border-red-200 bg-red-50 text-red-950;
+  }
+
+  .toast.info {
+    @apply border-sky-200 bg-sky-50 text-sky-950;
+  }
+
+  .toast-close {
+    @apply cursor-pointer border-0 bg-transparent text-muted-foreground hover:text-foreground;
+  }
+
+  ul.clean {
+    @apply m-0 grid list-none gap-2 p-0;
+  }
+
+  .status {
+    @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold;
+  }
+
+  .status.approved,
+  .status.paid,
+  .status.active,
+  .status.published {
+    @apply bg-emerald-100 text-emerald-900;
+  }
+
+  .status.waitlisted {
+    @apply bg-amber-100 text-amber-900;
+  }
+
+  .status.rejected,
+  .status.failed,
+  .status.cancelled {
+    @apply bg-red-100 text-red-900;
+  }
+
+  .status.applied,
+  .status.submitted,
+  .status.processing,
+  .status.pending,
+  .status.revision_requested,
+  .status.under_review {
+    @apply bg-sky-100 text-sky-900;
+  }
+
+  /* Table overflow safety — Phase 3b */
+  .table-scroller {
+    @apply min-w-0 overflow-x-auto rounded-lg border border-border;
+  }
+
+  .topbar {
+    @apply sticky top-0 z-sticky border-b border-border backdrop-blur-xl;
+    padding-top: env(safe-area-inset-top);
+    background-color: hsl(var(--background) / 0.9);
+  }
+
+  .dark .topbar {
+    background-color: hsl(var(--card) / 0.88);
+  }
+
+  .topbar-inner {
+    @apply mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6;
+  }
+
+  .brand {
+    @apply flex items-center gap-2.5 font-bold;
+  }
+
+  .brand-badge {
+    @apply inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-xs font-bold text-primary-foreground;
+  }
+
+  .topnav {
+    @apply flex flex-wrap items-center gap-1.5 sm:gap-2;
+  }
+
+  .nav-link {
+    @apply rounded-full border border-transparent px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-border hover:bg-muted hover:text-foreground;
+  }
+
+  .nav-link.active {
+    @apply border-border bg-accent text-accent-foreground;
+  }
+
+  .nav-link.login-primary {
+    @apply border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground;
+  }
+
+  .landing-shell {
+    @apply mx-auto w-full max-w-7xl px-4 pb-16 pt-8 sm:px-6 md:px-8;
+  }
+
+  .landing-section {
+    @apply py-10 sm:py-14;
+  }
+
+  .landing-title {
+    @apply text-3xl font-bold tracking-tight text-foreground sm:text-5xl;
+  }
+
+  .landing-subtitle {
+    @apply mt-3 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg;
+  }
+
+  .hero-grid {
+    @apply grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-10;
+  }
+
+  .cta-primary {
+    @apply btn primary rounded-full px-5 py-3 text-sm sm:text-base;
+  }
+
+  .cta-secondary {
+    @apply btn ghost rounded-full px-5 py-3 text-sm sm:text-base;
+  }
+
+  /* Figma landing — monochrome CTAs + bento (dark: lifted surfaces from light tokens) */
+  .landing-figma-btn-primary {
+    @apply inline-flex items-center justify-center rounded-xl bg-foreground px-4 py-3 text-lg font-medium text-background transition-[transform,opacity] duration-200 hover:opacity-90 active:scale-[0.99];
+  }
+
+  .landing-figma-btn-secondary {
+    @apply inline-flex items-center justify-center rounded-xl border-2 border-border bg-card px-4 py-3 text-lg font-medium text-foreground transition-colors hover:bg-muted/80;
+  }
+
+  .landing-bento-card {
+    @apply bg-black/[0.05] dark:bg-white/[0.06];
+  }
+
+  .landing-cta-card {
+    @apply bg-card;
+  }
+
+  .doodle-canvas {
+    @apply relative overflow-hidden rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-6;
+  }
+
+  .progress-dots {
+    @apply inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5;
+  }
+
+  .progress-dot {
+    @apply h-2 w-2 rounded-full bg-muted;
+  }
+
+  .progress-dot.active {
+    @apply bg-primary;
+  }
+
+  .progress-dot.complete {
+    @apply bg-success;
+  }
+
+  .focus-surface {
+    @apply rounded-xl border border-border bg-card shadow-sm;
+  }
+
+  .dense-table {
+    @apply text-sm;
+  }
+
+  .dense-table th {
+    @apply whitespace-nowrap px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground;
+  }
+
+  .dense-table td {
+    @apply whitespace-nowrap px-3 py-2 align-middle text-foreground;
+  }
+
+  .site-footer {
+    @apply bg-muted/25 dark:bg-muted/10;
+  }
+
+  .footer-link {
+    @apply text-sm text-muted-foreground transition-colors hover:text-foreground;
+  }
+
+  /* Subtle staggered entrance on landing (skipped under reduced motion above) */
+  .landing-motion-stack > .landing-section {
+    opacity: 0;
+    animation: landing-fade-up 0.55s ease-out forwards;
+    animation-fill-mode: forwards;
+  }
+
+  .landing-motion-stack > .landing-section:nth-child(1) {
+    animation-delay: 40ms;
+  }
+
+  .landing-motion-stack > .landing-section:nth-child(2) {
+    animation-delay: 90ms;
+  }
+
+  .landing-motion-stack > .landing-section:nth-child(3) {
+    animation-delay: 140ms;
+  }
+
+  .landing-motion-stack > .landing-section:nth-child(4) {
+    animation-delay: 190ms;
+  }
+
+  .landing-motion-stack > .landing-section:nth-child(5) {
+    animation-delay: 240ms;
+  }
+
+  .landing-motion-stack > .landing-section:nth-child(6) {
+    animation-delay: 290ms;
+  }
+
+  .landing-motion-stack > .landing-section:nth-child(7) {
+    animation-delay: 340ms;
+  }
+
+  .landing-motion-stack > .landing-section:nth-child(8) {
+    animation-delay: 390ms;
+  }
+}
+
+@layer utilities {
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee-slow {
+  animation: marquee 40s linear infinite;
+}
+
+.animate-marquee-fast {
+  animation: marquee 20s linear infinite;
+}
+
+.font-tilt {
+  font-family: var(--font-tilt-warp), var(--font-sans), sans-serif;
+}
+
+.font-serif-custom {
+  font-family: var(--font-instrument-serif), serif;
+}
+
+.font-geist-custom {
+  font-family: var(--font-geist), var(--font-sans), sans-serif;
+}
+
+.bg-noise-grid {
+  background-color: #0F0E0E;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 0);
+  background-size: 24px 24px, 24px 24px, 8px 8px;
+  background-position: 0 0, 0 0, 0 0;
+}
+
+.bg-noise-light {
+  background-color: #F5F5F5;
+  background-image: 
+    linear-gradient(to right, rgba(15, 14, 14, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(15, 14, 14, 0.02) 1px, transparent 1px),
+    radial-gradient(rgba(15, 14, 14, 0.03) 1px, transparent 0);
+  background-size: 24px 24px, 24px 24px, 8px 8px;
+}
+
+.bg-noise-dark-lifted {
+  background-color: #1F1F1F;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 0);
+  background-size: 24px 24px, 24px 24px, 8px 8px;
+}

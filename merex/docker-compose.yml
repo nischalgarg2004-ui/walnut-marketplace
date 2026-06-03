@@ -1,0 +1,39 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: merex_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: merex
+    ports:
+      - "5432:5432"
+    volumes:
+      - merex_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d merex"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: merex_app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/merex
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      COMMISSION_PERCENT: "15"
+      RAZORPAY_KEY_ID: ""
+      RAZORPAY_KEY_SECRET: ""
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+volumes:
+  merex_postgres_data:
