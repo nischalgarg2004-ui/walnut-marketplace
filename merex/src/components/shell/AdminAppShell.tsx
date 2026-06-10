@@ -10,6 +10,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 const NAV: { href: Route; label: string }[] = [
   { href: "/admin", label: "Overview" },
   { href: "/admin/moderation", label: "Moderation" },
+  { href: "/admin/beta-requests", label: "Beta requests" },
   { href: "/admin/payouts", label: "Payouts" },
   { href: "/admin/flags", label: "Flags" },
   { href: "/admin/users", label: "Users" },

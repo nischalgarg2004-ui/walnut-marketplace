@@ -3,7 +3,7 @@ import LandingPageClient from "@/components/LandingPageClient";
 
 export default function HomePage() {
   return (
-    <PublicMarketingShell mainClassName="overflow-x-hidden">
+    <PublicMarketingShell>
       <LandingPageClient />
     </PublicMarketingShell>
   );

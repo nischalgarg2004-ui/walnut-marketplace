@@ -577,3 +577,14 @@ model MetaPlatformRequest {
   @@index([kind, status])
 }
 
+model EarlyAccessRequest {
+  id                String   @id @default(cuid())
+  name              String
+  mobileNumber      String
+  instagramUsername String
+  roleType          String   // "CLIPPER" | "UGC"
+  status            String   @default("PENDING") // "PENDING" | "GRANTED" | "REJECTED"
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+

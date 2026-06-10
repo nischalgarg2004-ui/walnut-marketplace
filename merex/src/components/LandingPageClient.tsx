@@ -84,45 +84,39 @@ interface WordInfo {
 }
 
 const ugcSegments = [
-  { text: "Most businesses struggle to consistently create ", bold: false },
+  { text: "Most brands struggle to consistently create high-performing ", bold: false },
   { text: "Instagram Reels", bold: true },
-  { text: " that feel authentic, relatable, and attention-grabbing. ", bold: false },
-  { text: "Bounty-style UGC", bold: true },
-  { text: " solves that by letting brands ", bold: false },
-  { text: "crowdsource Reels", bold: true },
-  { text: " from everyday creators instead of relying only on expensive influencers or agencies. This is the first time you can basically ", bold: false },
-  { text: "flood the internet", bold: true },
-  { text: " high quality UGC overnight.", bold: false }
+  { text: ". Our bounty system lets you crowdsource authentic Reels from hundreds of ", bold: false },
+  { text: "everyday creators", bold: true },
+  { text: ", paying only for content that matches your brief. ", bold: false },
+  { text: "Flood the algorithm", bold: true },
+  { text: " with organic, relatable content overnight.", bold: false }
 ];
 
 const clippingSegments = [
-  { text: "Businesses are sitting on hours of ", bold: false },
-  { text: "valuable content", bold: true },
-  { text: " every week, including podcasts, webinars, interviews, product demos, customer stories, and behind-the-scenes moments, but most of it never reaches the people who would actually buy from them. ", bold: false },
-  { text: "Clipping", bold: true },
-  { text: " helps businesses turn long-form content into ", bold: false },
-  { text: "short, high-performing Instagram clips", bold: true },
-  { text: " designed to grab attention and ", bold: false },
-  { text: "drive reach", bold: true },
+  { text: "Turn hours of podcasts, webinars, and product demos into virality. Our ", bold: false },
+  { text: "clipping engine", bold: true },
+  { text: " helps creators segment long-form videos into high-performing ", bold: false },
+  { text: "short clips", bold: true },
+  { text: " designed to grab attention and drive reach, maximizing the value of your ", bold: false },
+  { text: "existing content library", bold: true },
   { text: ".", bold: false }
 ];
 
 const whyNowSegments = [
-  { text: "Right now, ", bold: false },
-  { text: "Instagram is rewarding short-form video", bold: true },
-  { text: " more than ever, and businesses are under ", bold: false },
-  { text: "constant pressure to post consistently", bold: true },
-  { text: " to stay visible. At the same time, audiences trust authentic, creator-style content far more than polished ads. Brands no longer want one expensive campaign every few months. They need a ", bold: false },
-  { text: "continuous stream of Reels", bold: true },
-  { text: " that feel real, fast, and native to Instagram culture.", bold: false }
+  { text: "Eliminate manual screenshot verification. Our platform syncs directly with the ", bold: false },
+  { text: "Instagram Graph API", bold: true },
+  { text: " to automatically track live post status, views, and engagement milestones. Payouts are triggered securely based on ", bold: false },
+  { text: "verifiable, real-time performance data", bold: true },
+  { text: ".", bold: false }
 ];
 
 const finalThoughtsSegments = [
-  { text: "The way businesses grow online is changing fast. Brands that ", bold: false },
-  { text: "win attention today", bold: true },
-  { text: " are not always the oldest, but the ones ", bold: false },
-  { text: "creating the most consistent and relatable content", bold: true },
-  { text: " on Instagram.", bold: false }
+  { text: "Keep campaigns secure. Brands fund an ", bold: false },
+  { text: "escrow wallet", bold: true },
+  { text: " on-platform to launch campaigns. Once deliverables are verified, our system instantly releases payouts to creators. ", bold: false },
+  { text: "Scale trust", bold: true },
+  { text: ", minimize accounting overhead, and run barter or paid campaigns seamlessly.", bold: false }
 ];
 
 function compileSegments(segments: { text: string; bold: boolean }[]): WordInfo[] {
@@ -237,108 +231,208 @@ function ScrollHighlightParagraph({ segments, progress }: ScrollHighlightParagra
   );
 }
 
+interface RetroControlBoardProps {
+  activeIndex: number;
+  scrollToCard: (idx: number) => void;
+}
+
+function RetroControlBoard({ activeIndex, scrollToCard }: RetroControlBoardProps) {
+  const logs = [
+    [
+      "merex:~# run ugc_bounty.sh",
+      "[OK] mapping 2.4k verified creators",
+      "[OK] bounty campaign active",
+      "[SYSTEM] ready for content intake"
+    ],
+    [
+      "merex:~# start clipping_engine",
+      "[OK] ingest podcast_source_file.mp4",
+      "[OK] generating AI shorts & segments",
+      "[SYSTEM] 12 reels compiled & queued"
+    ],
+    [
+      "merex:~# check api_validator.py",
+      "[OK] instagram graph connection established",
+      "[OK] live post metrics sync: online",
+      "[SYSTEM] deliverable verification active"
+    ],
+    [
+      "merex:~# run payout_ledger.rs",
+      "[OK] escrow wallet funded: verified",
+      "[OK] automated payouts enabled",
+      "[SYSTEM] ready for creator settlements"
+    ]
+  ];
+
+  return (
+    <div className="w-full bg-stone-900 border-2 border-stone-800 rounded-xl p-6 font-mono text-[11px] text-stone-300 shadow-[6px_6px_0px_rgba(15,14,14,1)] select-none">
+      <div className="flex items-center justify-between border-b border-stone-800/80 pb-3 mb-4">
+        <div className="flex items-center gap-1.5">
+          <div className="w-2.5 h-2.5 rounded-full bg-red-400/80 border border-red-500/40"></div>
+          <div className="w-2.5 h-2.5 rounded-full bg-yellow-400/80 border border-yellow-500/40"></div>
+          <div className="w-2.5 h-2.5 rounded-full bg-green-400/80 border border-green-500/40"></div>
+        </div>
+        <span className="text-[10px] text-stone-500 lowercase font-bold tracking-wide">
+          [ system_control_board.cfg ]
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 border-b border-stone-800/60 pb-3.5 mb-4 text-stone-400">
+        <div>
+          <span className="text-stone-600">STATUS:</span> <span className="text-emerald-400 font-bold">ONLINE</span>
+        </div>
+        <div>
+          <span className="text-stone-600">ACTIVE:</span> <span className="text-stone-200">NODE_0{activeIndex + 1}</span>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2 mb-6">
+        <span className="text-stone-600 font-bold uppercase tracking-wider text-[9px] mb-1">Select Module:</span>
+        {[
+          { label: "UGC Bounties", index: 0 },
+          { label: "Clipping Engine", index: 1 },
+          { label: "API Verification", index: 2 },
+          { label: "Wallet Settlements", index: 3 }
+        ].map((item) => {
+          const isActive = activeIndex === item.index;
+          return (
+            <button
+              key={item.index}
+              onClick={() => scrollToCard(item.index)}
+              className={`flex items-center justify-between text-left px-3 py-2 border rounded-lg transition-all duration-200 ${
+                isActive
+                  ? "bg-stone-800 border-stone-700 text-stone-100 font-bold translate-x-1"
+                  : "bg-transparent border-transparent text-stone-500 hover:text-stone-300"
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <span className={isActive ? "text-emerald-400 font-bold" : "text-stone-600"}>
+                  0{item.index + 1}.
+                </span>
+                <span>{item.label}</span>
+              </div>
+              
+              {isActive && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[8px] text-emerald-400 uppercase tracking-widest opacity-80">ACTIVE</span>
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="bg-stone-950 border border-stone-800 rounded-lg p-4 font-mono text-[10px] leading-relaxed text-stone-400 flex flex-col gap-1 h-[115px] justify-start overflow-hidden">
+        {logs[activeIndex].map((line, idx) => (
+          <div
+            key={idx}
+            className={
+              line.startsWith("merex")
+                ? "text-stone-300"
+                : line.includes("[OK]")
+                ? "text-emerald-400/90"
+                : line.includes("[WARNING]")
+                ? "text-yellow-400/90"
+                : "text-stone-500"
+            }
+          >
+            {line}
+          </div>
+        ))}
+        <div className="flex items-center gap-1 text-stone-300 mt-1">
+          <span>merex:~#</span>
+          <span className="w-1.5 h-3 bg-stone-300 animate-pulse"></span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface ScrollStackSectionProps {
   index: number;
   title: string;
+  fileName: string;
+  size: string;
   segments: { text: string; bold: boolean }[];
+  progress: MotionValue<number>;
 }
 
-function ScrollStackSection({ index, title, segments }: ScrollStackSectionProps) {
+function ScrollStackSection({ index, title, fileName, size, segments, progress }: ScrollStackSectionProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const scrollYProgress = useMotionValue(0);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    const updateProgress = () => {
-      const rect = el.getBoundingClientRect();
-      const elementTop = rect.top + window.scrollY;
-      const elementHeight = rect.height;
-      const viewportHeight = window.innerHeight;
-      
-      const startScroll = elementTop - viewportHeight;
-      const endScroll = elementTop + elementHeight;
-      const totalRange = endScroll - startScroll;
-      
-      if (totalRange <= 0) return;
-      
-      const progress = (window.scrollY - startScroll) / totalRange;
-      const clamped = Math.max(0, Math.min(1, progress));
-      scrollYProgress.set(clamped);
-    };
-
-    window.addEventListener("scroll", updateProgress, { passive: true });
-    window.addEventListener("resize", updateProgress, { passive: true });
-    updateProgress();
-
-    // Small delay to ensure hydration and layout positions settle
-    const timer = setTimeout(updateProgress, 100);
-
-    return () => {
-      window.removeEventListener("scroll", updateProgress);
-      window.removeEventListener("resize", updateProgress);
-      clearTimeout(timer);
-    };
-  }, [scrollYProgress]);
-
-  // Scale, opacity, and translate Y transitions for the overlapping/stacking depth effect
-  // As progress goes from 0.55 (fully active/centered) to 0.9 (overlapped by next card)
-  const scale = useTransform(scrollYProgress, [0.55, 0.9], [1, 0.93]);
-  const opacity = useTransform(scrollYProgress, [0.55, 0.9], [1, 0.35]);
-  const y = useTransform(scrollYProgress, [0.55, 0.9], [0, -40]);
-
-  const isLast = index === 3;
-
-  // Use the container entry phase to drive the text reveal animation (reveals earlier for the last card)
-  const typingProgress = useTransform(scrollYProgress, isLast ? [0.0, 0.35] : [0.15, 0.5], [0, 1]);
+  const typingProgress = useTransform(progress, [0.1, 0.9], [0, 1]);
 
   return (
     <div
       ref={containerRef}
-      className={isLast ? "relative w-full h-auto flex flex-col justify-start items-center" : "relative w-full h-[150px] sm:h-[200px] md:h-[420px] lg:h-[500px] xl:h-[580px] flex flex-col justify-start items-center"}
+      className="relative w-full h-auto flex flex-col justify-start items-center"
       style={{
         zIndex: index + 10,
       }}
     >
-      <motion.div
-        style={isLast ? {
-          position: "relative",
-          transformOrigin: "top center",
-        } : {
-          scale,
-          opacity,
-          y,
-          position: "sticky",
-          top: `${140 + index * 20}px`,
-          transformOrigin: "top center",
-        }}
-        className="w-full max-w-[620px] bg-white/95 border border-stone-200/60 rounded-2xl p-8 shadow-[0_12px_40px_rgba(15,14,14,0.06)]"
+      <div
+        className="w-full bg-stone-100 border-2 border-stone-800 rounded-xl shadow-[6px_6px_0px_rgba(15,14,14,1)] overflow-hidden transition-all duration-300"
       >
-        <div className="flex flex-col gap-6">
+        <div className="flex items-center justify-between bg-stone-800 px-4 py-2.5 text-white border-b-2 border-stone-800 select-none">
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-red-400 border border-red-500"></div>
+            <div className="w-2.5 h-2.5 rounded-full bg-yellow-400 border border-yellow-500"></div>
+            <div className="w-2.5 h-2.5 rounded-full bg-green-400 border border-green-500"></div>
+          </div>
+          <span className="text-[10px] font-mono font-bold lowercase tracking-wider text-stone-300">
+            {fileName}
+          </span>
+          <div className="w-12"></div>
+        </div>
+
+        <div className="p-8 flex flex-col gap-6">
           <h2 className="font-tilt text-[22px] md:text-[28px] lg:text-[32px] text-[#0F0E0E] tracking-wide">
             {title}
           </h2>
           <ScrollHighlightParagraph segments={segments} progress={typingProgress} />
         </div>
-      </motion.div>
+
+        <div className="flex items-center justify-between bg-stone-200/60 px-4 py-1.5 border-t-2 border-stone-800 text-[9px] font-mono text-stone-600 select-none">
+          <span>ENCODING: UTF-8</span>
+          <span>SIZE: {size}</span>
+        </div>
+      </div>
     </div>
   );
 }
 
-// ─── Static (no-animation) card for mobile ───────────────────────────────────
-function StaticCardSection({ title, segments }: { title: string; segments: { text: string; bold: boolean }[] }) {
+function StaticCardSection({ title, fileName, size, segments }: { title: string; fileName: string; size: string; segments: { text: string; bold: boolean }[] }) {
   return (
-    <div className="w-full bg-white/95 border border-stone-200/60 rounded-2xl p-6 shadow-md">
-      <div className="flex flex-col gap-4">
-        <h2 className="font-tilt text-[20px] text-[#0F0E0E] tracking-wide">{title}</h2>
-        <p className="text-[15px] text-[#0F0E0E]/75 leading-relaxed">
+    <div className="w-full bg-stone-100 border-2 border-stone-800 rounded-xl shadow-[5px_5px_0px_rgba(15,14,14,1)] overflow-hidden">
+      <div className="flex items-center justify-between bg-stone-800 px-4 py-2 text-white border-b-2 border-stone-800 select-none">
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-red-400"></div>
+          <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
+          <div className="w-2 h-2 rounded-full bg-green-400"></div>
+        </div>
+        <span className="text-[9px] font-mono font-bold lowercase tracking-wider text-stone-300">
+          {fileName}
+        </span>
+        <div className="w-8"></div>
+      </div>
+
+      <div className="p-5 flex flex-col gap-4">
+        <h2 className="font-tilt text-[18px] text-[#0F0E0E] tracking-wide">{title}</h2>
+        <p className="text-[14px] text-[#0F0E0E]/85 leading-relaxed">
           {segments.map((seg, i) =>
             seg.bold
               ? <strong key={i} className="text-[#0F0E0E] font-bold">{seg.text} </strong>
               : <span key={i}>{seg.text}</span>
           )}
         </p>
+      </div>
+
+      <div className="flex items-center justify-between bg-stone-200/60 px-4 py-1 border-t-2 border-stone-800 text-[8px] font-mono text-stone-500">
+        <span>ENCODING: UTF-8</span>
+        <span>SIZE: {size}</span>
       </div>
     </div>
   );
@@ -347,6 +441,50 @@ function StaticCardSection({ title, segments }: { title: string; segments: { tex
 export default function LandingPageClient() {
   const { scrollY } = useScroll();
   const marqueeRef = useRef<HTMLDivElement>(null);
+
+  // Retro control board index tracking & refs:
+  const [activeCardIndex, setActiveCardIndex] = useState(0);
+  const desktopSectionRef = useRef<HTMLDivElement>(null);
+
+  // Use scroll progress of the desktop section container
+  const { scrollYProgress } = useScroll({
+    target: desktopSectionRef,
+    offset: ["start start", "end end"]
+  });
+
+  useEffect(() => {
+    const unsubscribe = scrollYProgress.on("change", (latest) => {
+      // Map parent scroll progress [0, 1] to card index [0, 3]
+      const idx = Math.min(3, Math.floor(latest * 4));
+      setActiveCardIndex(idx);
+    });
+    return () => unsubscribe();
+  }, [scrollYProgress]);
+
+  // Create local progress MotionValues for each card
+  const card0Progress = useTransform(scrollYProgress, [0.0, 0.25], [0, 1]);
+  const card1Progress = useTransform(scrollYProgress, [0.25, 0.5], [0, 1]);
+  const card2Progress = useTransform(scrollYProgress, [0.5, 0.75], [0, 1]);
+  const card3Progress = useTransform(scrollYProgress, [0.75, 1.0], [0, 1]);
+
+  const scrollToCard = (idx: number) => {
+    const el = desktopSectionRef.current;
+    if (el) {
+      const rect = el.getBoundingClientRect();
+      const sectionHeight = rect.height;
+      const sectionTop = rect.top + window.scrollY;
+      
+      // Calculate progress center for this card
+      // Card 0: 0.125, Card 1: 0.375, Card 2: 0.625, Card 3: 0.875
+      const progress = (idx + 0.5) / 4;
+      const targetScrollY = sectionTop + progress * (sectionHeight - window.innerHeight);
+      
+      window.scrollTo({
+        top: targetScrollY,
+        behavior: "smooth"
+      });
+    }
+  };
 
   // Automatic carousel (slow) with scroll‑controlled acceleration
   const baseSpeed = -30; // px per second, leftward slow scroll
@@ -422,13 +560,15 @@ export default function LandingPageClient() {
           muted
           playsInline
           preload="none"
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0 opacity-45"
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0 opacity-25"
         >
-          <source src="/landing/hero-bg.mp4" type="video/mp4" />
+          <source src="/landing/trippy-bg.mp4" type="video/mp4" />
         </video>
         
-        {/* Subtle Dark Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0F0E0E]/90 via-[#0F0E0E]/20 to-[#0F0E0E]/40 z-0 pointer-events-none"></div>
+        {/* Dark Overlay & Retro Grain Texture to prevent text competition */}
+        <div className="absolute inset-0 bg-[#0F0E0E]/70 z-0 pointer-events-none"></div>
+        <div className="absolute inset-0 bg-noise-grid opacity-40 mix-blend-overlay z-0 pointer-events-none"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0F0E0E]/90 via-transparent to-[#0F0E0E]/40 z-0 pointer-events-none"></div>
 
         {/* Hero Content */}
         <div className="relative z-10 max-w-4xl">
@@ -445,10 +585,16 @@ export default function LandingPageClient() {
           >
             merex
           </motion.h1>
-          <div className="mt-10 max-w-[1215px]">
+          <div className="mt-10 max-w-[1215px] flex flex-col items-start gap-8">
             <p className="font-serif-custom text-2xl sm:text-3xl md:text-[40px] leading-tight text-[#F6F8FB] tracking-tight">
-              The mere exposure effect is a psychological phenomenon where repeated exposure to something increases familiarity, comfort, and liking toward it.
+              Advertising doesn't always convince you that a product is good; it just introduces you so many times that you accept it as a roommate.
             </p>
+            <Link
+              href="/early-access"
+              className="px-6 py-3.5 bg-[#F6F8FB] text-[#0F0E0E] rounded-lg font-mono font-bold text-xs tracking-wider uppercase border border-transparent hover:bg-transparent hover:text-[#F6F8FB] hover:border-[#F6F8FB] transition-all duration-300 shadow-[4px_4px_0px_rgba(255,255,255,0.2)] hover:shadow-none select-none"
+            >
+              Get Early Access
+            </Link>
           </div>
         </div>
       </section>
@@ -472,11 +618,11 @@ export default function LandingPageClient() {
 
       {/* 3a. MOBILE — static text cards (no sticky/animation) */}
       <section className="md:hidden bg-noise-light text-[#0F0E0E] py-10 px-5 border-b border-border/10">
-        <div className="flex flex-col gap-5">
-          <StaticCardSection title="Commission Content to UGC Creators" segments={ugcSegments} />
-          <StaticCardSection title="Flood the Internet with Your Content" segments={clippingSegments} />
-          <StaticCardSection title="Why Now?" segments={whyNowSegments} />
-          <StaticCardSection title="Final Thoughts" segments={finalThoughtsSegments} />
+        <div className="flex flex-col gap-6">
+          <StaticCardSection title="Bounty UGC Campaigns" fileName="ugc_bounty.sh" size="4.8KB" segments={ugcSegments} />
+          <StaticCardSection title="Short-Form Clipping Engine" fileName="clipping_engine.bin" size="4.2KB" segments={clippingSegments} />
+          <StaticCardSection title="Meta API Automated Verification" fileName="api_validator.py" size="5.5KB" segments={whyNowSegments} />
+          <StaticCardSection title="Escrow Wallets & Automated Settlements" fileName="payout_ledger.rs" size="3.2KB" segments={finalThoughtsSegments} />
           <div className="border-t border-stone-300 pt-6 flex items-center justify-between text-stone-500">
             <span className="font-mono text-xs uppercase tracking-wider">MEREX</span>
             <div className="flex items-center gap-4"><GlobeIcon /><CopyrightIcon /><TargetIcon /></div>
@@ -484,19 +630,82 @@ export default function LandingPageClient() {
         </div>
       </section>
 
-      {/* 3b. DESKTOP — animated sticky scroll stack */}
-      <section className="hidden md:block bg-noise-light text-[#0F0E0E] pt-20 pb-16 border-b border-border/10">
-        <div className="max-w-[620px] mx-auto px-6 flex flex-col gap-1 sm:gap-2 md:gap-3 lg:gap-4">
-          <ScrollStackSection index={0} title="Commission Content to UGC Creators" segments={ugcSegments} />
-          <ScrollStackSection index={1} title="Flood the Internet with Your Content" segments={clippingSegments} />
-          <ScrollStackSection index={2} title="Why Now?" segments={whyNowSegments} />
-          <ScrollStackSection index={3} title="Final Thoughts" segments={finalThoughtsSegments} />
-        </div>
-        <div className="max-w-[620px] mx-auto px-6 mt-12">
-          <div className="border-t border-stone-300 pt-8 flex items-center justify-between text-stone-500">
+      {/* 3b. DESKTOP — animated sticky scroll stack with retro control board */}
+      <section ref={desktopSectionRef} className="hidden md:block bg-noise-light text-[#0F0E0E] relative border-b border-border/10 h-[150vh] pt-16 pb-16">
+        <div 
+          style={{
+            top: "140px",
+            height: "calc(100vh - 240px)",
+            minHeight: "520px"
+          }}
+          className="sticky max-w-[1200px] mx-auto px-8 flex flex-col justify-between w-full"
+        >
+          
+          {/* Main Content: Sidebar + Cards */}
+          <div className="flex gap-12 items-start w-full flex-1">
+            {/* Left Column: Sticky Retro Control Board */}
+            <div className="w-[38%] z-20">
+              <RetroControlBoard
+                activeIndex={activeCardIndex}
+                scrollToCard={scrollToCard}
+              />
+            </div>
+
+            {/* Right Column: In-place OS Window Card View */}
+            <div className="w-[62%] relative h-full">
+              {/* Card 0 */}
+              <div className={`absolute inset-x-0 top-0 transition-opacity duration-300 ${activeCardIndex === 0 ? "opacity-100 z-10 pointer-events-auto" : "opacity-0 z-0 pointer-events-none"}`}>
+                <ScrollStackSection
+                  index={0}
+                  progress={card0Progress}
+                  title="Bounty UGC Campaigns"
+                  fileName="ugc_bounty.sh"
+                  size="4.8KB"
+                  segments={ugcSegments}
+                />
+              </div>
+              {/* Card 1 */}
+              <div className={`absolute inset-x-0 top-0 transition-opacity duration-300 ${activeCardIndex === 1 ? "opacity-100 z-10 pointer-events-auto" : "opacity-0 z-0 pointer-events-none"}`}>
+                <ScrollStackSection
+                  index={1}
+                  progress={card1Progress}
+                  title="Short-Form Clipping Engine"
+                  fileName="clipping_engine.bin"
+                  size="4.2KB"
+                  segments={clippingSegments}
+                />
+              </div>
+              {/* Card 2 */}
+              <div className={`absolute inset-x-0 top-0 transition-opacity duration-300 ${activeCardIndex === 2 ? "opacity-100 z-10 pointer-events-auto" : "opacity-0 z-0 pointer-events-none"}`}>
+                <ScrollStackSection
+                  index={2}
+                  progress={card2Progress}
+                  title="Meta API Automated Verification"
+                  fileName="api_validator.py"
+                  size="5.5KB"
+                  segments={whyNowSegments}
+                />
+              </div>
+              {/* Card 3 */}
+              <div className={`absolute inset-x-0 top-0 transition-opacity duration-300 ${activeCardIndex === 3 ? "opacity-100 z-10 pointer-events-auto" : "opacity-0 z-0 pointer-events-none"}`}>
+                <ScrollStackSection
+                  index={3}
+                  progress={card3Progress}
+                  title="Escrow Wallets & Automated Settlements"
+                  fileName="payout_ledger.rs"
+                  size="3.2KB"
+                  segments={finalThoughtsSegments}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Section Footer: Nested inside sticky window to avoid blank bottoms */}
+          <div className="w-full border-t border-stone-300 pt-6 flex items-center justify-between text-stone-500 mt-6 select-none pb-8">
             <span className="font-mono text-xs uppercase tracking-wider">MEREX</span>
             <div className="flex items-center gap-6"><GlobeIcon /><CopyrightIcon /><TargetIcon /></div>
           </div>
+
         </div>
       </section>
 

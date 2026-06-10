@@ -49,16 +49,22 @@ export const metadata: Metadata = {
 
 const themeBootstrapScript = `(function(){try{var k='merex_theme';var lk='ongram_theme';var t=localStorage.getItem(k)||localStorage.getItem(lk)||'system';if(!localStorage.getItem(k)&&localStorage.getItem(lk))localStorage.setItem(k,t);var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);}catch(e){}})();`;
 
+import LoadingScreen from "@/components/LoadingScreen";
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable} ${tiltWarp.variable} ${instrumentSerif.variable} ${geist.variable}`} suppressHydrationWarning>
       <head>
+          <link rel="preload" href="/landing/tv-logo-white.png" as="image" />
           <link rel="icon" type="image/png" href="/logo-favicon.png" />
           <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
           <link rel="manifest" href="/site.webmanifest" />
           <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
         </head>
-      <body className="font-sans">{children}</body>
+      <body className="font-sans">
+        <LoadingScreen />
+        {children}
+      </body>
     </html>
   );
 }

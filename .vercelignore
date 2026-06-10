@@ -1,0 +1,7 @@
+merex/assets/
+merex/node_modules/
+merex/.next/
+node_modules/
+.next/
+.git
+.vercel

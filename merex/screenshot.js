@@ -20,8 +20,8 @@ const sizes = [
     await page.screenshot({ path: `${outDir}/${s.name}_top.png` });
 
     // scroll to article section (approx where the 4 cards are)
-    await page.evaluate(() => window.scrollTo(0, 1400));
-    await new Promise(r => setTimeout(r, 600));
+    await page.evaluate(() => window.scrollTo(0, 1460));
+    await new Promise(r => setTimeout(r, 2000));
     await page.screenshot({ path: `${outDir}/${s.name}_cards.png` });
 
     await page.close();
