@@ -21,6 +21,7 @@ type ProfileRow = {
   instagramViewsTotal?: number;
   instagramStatsSyncedAt: string | null;
   instagramProfilePictureUrl: string | null;
+  instagramDemographics?: Array<{ city: string; count: number }> | null;
   primaryPersona?: "CREATOR" | "EDITOR_PAGE" | null;
   clippingEnabled?: boolean;
   editorPageHandle?: string | null;
@@ -107,6 +108,7 @@ export default function CreatorProfilePage() {
   const [instagramUsername, setInstagramUsername] = useState<string | null>(null);
   const [instagramStatsSyncedAt, setInstagramStatsSyncedAt] = useState<string | null>(null);
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
+  const [instagramDemographics, setInstagramDemographics] = useState<Array<{ city: string; count: number }> | null>(null);
 
   const displayHandle = useMemo(() => {
     const h = instagramUsername ?? "";
@@ -159,6 +161,7 @@ export default function CreatorProfilePage() {
       setInstagramUsername(resolvedHandle);
       setInstagramStatsSyncedAt(p.instagramStatsSyncedAt ?? null);
       setProfilePictureUrl(p.instagramProfilePictureUrl ?? null);
+      setInstagramDemographics(p.instagramDemographics ?? null);
       if (connected && resolvedHandle) {
         const handle = resolvedHandle;
         if (handle && !p.fullName?.trim()) {
@@ -301,6 +304,7 @@ export default function CreatorProfilePage() {
       setInstagramViewsTotal(p.instagramViewsTotal ?? 0);
       setInstagramStatsSyncedAt(p.instagramStatsSyncedAt ?? null);
       setProfilePictureUrl(p.instagramProfilePictureUrl ?? null);
+      setInstagramDemographics(p.instagramDemographics ?? null);
       if (meta.syncStatus === "degraded") {
         setSyncNotice({
           kind: "info",
@@ -815,6 +819,62 @@ export default function CreatorProfilePage() {
           </p>
         ) : null}
       </div>
+
+      {instagramConnected && (
+        <div className="card" aria-labelledby="audience-demographics-heading">
+          <h2 id="audience-demographics-heading" className="section-title m-0">
+            Audience Demographics
+          </h2>
+          <p className="muted text-sm mt-1 mb-6">
+            Top 5 cities where your followers are located, sourced from your connected Instagram Professional account.
+          </p>
+
+          {instagramDemographics && instagramDemographics.length > 0 ? (
+            <div className="space-y-4">
+              {(() => {
+                const maxCount = Math.max(...instagramDemographics.map((d) => d.count), 1);
+                const totalCount = instagramDemographics.reduce((acc, curr) => acc + curr.count, 0);
+
+                return instagramDemographics.slice(0, 5).map((d, index) => {
+                  const percentage = ((d.count / maxCount) * 100).toFixed(0);
+                  const relativePercentage = totalCount > 0 ? ((d.count / totalCount) * 100).toFixed(1) : null;
+
+                  return (
+                    <div key={d.city} className="space-y-1">
+                      <div className="flex justify-between text-sm">
+                        <span className="font-medium text-foreground">
+                          {index + 1}. {d.city}
+                        </span>
+                        <span className="tabular-nums text-muted-foreground">
+                          {d.count.toLocaleString()} followers {relativePercentage ? `(${relativePercentage}%)` : ""}
+                        </span>
+                      </div>
+                      <div className="h-2 w-full rounded-full bg-muted/60 overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-500"
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          ) : instagramDemographics && instagramDemographics.length === 0 ? (
+            <div className="rounded-lg border border-border bg-muted/20 p-4">
+              <p className="text-sm text-muted-foreground m-0">
+                No city demographic data available yet. Instagram requires at least 100 followers on your professional account and sufficient active audience data before demographic insights are generated.
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-border bg-muted/20 p-4">
+              <p className="text-sm text-muted-foreground m-0">
+                Demographic insights have not been synced yet. Click <strong>"Update from Instagram"</strong> above to sync your audience demographics.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {instagramConnected ? <CreatorInstagramInsightsCard /> : null}
     </section>

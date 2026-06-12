@@ -10,7 +10,8 @@ import {
   fetchInstagramIdentity,
   fetchInstagramMediaViewsTotal,
   refreshLongLivedAccessToken,
-  shouldRefreshInstagramToken
+  shouldRefreshInstagramToken,
+  fetchInstagramAudienceDemographics
 } from "@/lib/integrations/instagram";
 import { fetchInstagramProfileForSync } from "@/lib/integrations/instagram-public-profile";
 
@@ -235,6 +236,21 @@ export async function POST(req: NextRequest) {
         ? await fetchInstagramMediaViewsTotal({ accessToken, pageLimit: 10, perPageLimit: 50 }).catch(() => 0)
         : 0;
 
+    let demographics: any = null;
+    if (accessToken && profile.instagramUserId) {
+      try {
+        demographics = await fetchInstagramAudienceDemographics({
+          accessToken,
+          instagramUserId: profile.instagramUserId
+        });
+      } catch (err) {
+        console.warn("[instagram/sync] demographics fetch failed", {
+          userId: user.userId,
+          error: err instanceof Error ? err.message : "unknown"
+        });
+      }
+    }
+
     if (!hasName && !hasFollowers && !hasMedia && !hasPic) {
       syncStatus = "failed";
       syncReason = "no_usable_data";
@@ -262,6 +278,7 @@ export async function POST(req: NextRequest) {
         instagramViewsTotal: viewsTotal,
         ...(hasName ? { fullName: extracted.fullName!.trim() } : {}),
         ...(hasPic ? { instagramProfilePictureUrl: extracted.profilePictureUrl!.trim() } : {}),
+        ...(demographics !== null ? { instagramDemographics: demographics } : {}),
         ...(resolvedUsername
           ? {
               instagramUsername: resolvedUsername,

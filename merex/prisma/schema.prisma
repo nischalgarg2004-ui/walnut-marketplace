@@ -167,6 +167,7 @@ model CreatorProfile {
   avgEngagement                 Float                @default(0)
   instagramStatsSyncedAt        DateTime?
   instagramProfilePictureUrl      String?
+  instagramDemographics         Json?
   kycStatus                     String               @default("PENDING")
   indiaStateId                  String?
   indiaDistrictId               String?

@@ -644,5 +644,61 @@ export async function fetchMediaInsightsWithPolicy(opts: {
     };
   }
 }
+// -----------------------------------------------------------------------------
+// Audience Demographics (top cities)
+// -----------------------------------------------------------------------------
+export type InstagramDemographicEntry = {
+  city: string;
+  count: number;
+};
+
+export async function fetchInstagramAudienceDemographics(opts: {
+  accessToken: string;
+  instagramUserId: string;
+}): Promise<InstagramDemographicEntry[]> {
+  const url = new URL(`https://graph.instagram.com/${GRAPH_VERSION}/${opts.instagramUserId}/insights`);
+  url.searchParams.set("metric", "audience_city");
+  url.searchParams.set("period", "lifetime");
+  url.searchParams.set("access_token", opts.accessToken);
+
+  const res = await fetch(url.toString(), { method: "GET", cache: "no-store" });
+  if (!res.ok) {
+    let detail = "";
+    try {
+      const errBody = (await res.json()) as { error?: { message?: string; code?: number } };
+      detail = errBody?.error?.message ? `: ${errBody.error.message}` : "";
+    } catch {
+      /* ignore */
+    }
+    throw new Error(`Failed to fetch Instagram audience demographics${detail}`);
+  }
+
+  const json = (await res.json()) as {
+    data?: Array<{
+      name?: string;
+      values?: Array<{
+        value?: Record<string, number>;
+      }>;
+    }>;
+  };
+
+  const data = json.data?.[0];
+  if (data?.name === "audience_city" && Array.isArray(data.values)) {
+    const valueObj = data.values[0]?.value;
+    if (valueObj && typeof valueObj === "object") {
+      const entries: InstagramDemographicEntry[] = Object.entries(valueObj).map(
+        ([city, count]) => ({
+          city,
+          count: typeof count === "number" ? count : 0
+        })
+      );
+      // Sort descending by count
+      return entries.sort((a, b) => b.count - a.count);
+    }
+  }
+
+  return [];
+}
 
 export { decryptTokenFromStorage, encryptTokenForStorage } from "@/lib/token-crypto";
+
