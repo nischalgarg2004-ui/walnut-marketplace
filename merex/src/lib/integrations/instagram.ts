@@ -657,7 +657,8 @@ export async function fetchInstagramAudienceDemographics(opts: {
   instagramUserId: string;
 }): Promise<InstagramDemographicEntry[]> {
   const url = new URL(`https://graph.instagram.com/${GRAPH_VERSION}/${opts.instagramUserId}/insights`);
-  url.searchParams.set("metric", "audience_city");
+  url.searchParams.set("metric", "follower_demographics");
+  url.searchParams.set("breakdown", "city");
   url.searchParams.set("period", "lifetime");
   url.searchParams.set("access_token", opts.accessToken);
 
@@ -676,22 +677,35 @@ export async function fetchInstagramAudienceDemographics(opts: {
   const json = (await res.json()) as {
     data?: Array<{
       name?: string;
-      values?: Array<{
-        value?: Record<string, number>;
-      }>;
+      period?: string;
+      total_value?: {
+        breakdowns?: Array<{
+          dimension_keys?: string[];
+          results?: Array<{
+            dimension_values?: string[];
+            value?: number;
+          }>;
+        }>;
+      };
     }>;
   };
 
   const data = json.data?.[0];
-  if (data?.name === "audience_city" && Array.isArray(data.values)) {
-    const valueObj = data.values[0]?.value;
-    if (valueObj && typeof valueObj === "object") {
-      const entries: InstagramDemographicEntry[] = Object.entries(valueObj).map(
-        ([city, count]) => ({
-          city,
-          count: typeof count === "number" ? count : 0
+  if (data?.name === "follower_demographics" && data.total_value?.breakdowns) {
+    const breakdown = data.total_value.breakdowns.find(
+      (b) => Array.isArray(b.dimension_keys) && b.dimension_keys.includes("city")
+    );
+    if (breakdown && Array.isArray(breakdown.results)) {
+      const entries: InstagramDemographicEntry[] = breakdown.results
+        .map((r) => {
+          const cityName = Array.isArray(r.dimension_values) ? r.dimension_values[0] : "";
+          return {
+            city: typeof cityName === "string" ? cityName : "",
+            count: typeof r.value === "number" ? r.value : 0
+          };
         })
-      );
+        .filter((e) => e.city !== "");
+
       // Sort descending by count
       return entries.sort((a, b) => b.count - a.count);
     }
